@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+generated_certs/
+*.log
+public_url.txt
+cloudflared.exe

@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استخراج الشهادات</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* ══════════════════════════════════════
+           CSS Variables & Reset
+        ══════════════════════════════════════ */
+        :root {
+            --gold:        #b8860b;
+            --gold-light:  #daa520;
+            --gold-pale:   #f5e6b0;
+            --cream:       #fdfaf2;
+            --dark:        #1a1208;
+            --text:        #3d2b0a;
+            --text-muted:  #7a6035;
+            --white:       #ffffff;
+            --shadow:      rgba(184, 134, 11, 0.2);
+            --radius:      16px;
+            --radius-sm:   10px;
+            --transition:  0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--cream);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* ══════════════════════════════════════
+           Background Ornament
+        ══════════════════════════════════════ */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(218,165,32,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(184,134,11,0.06) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ══════════════════════════════════════
+           Header
+        ══════════════════════════════════════ */
+        header {
+            position: relative; z-index: 1;
+            background: linear-gradient(160deg, #0d2d5e 0%, #1a4a8a 40%, #0d2d5e 100%);
+            padding: 0;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+            overflow: hidden;
+        }
+
+        /* خط ذهبي أعلى الهيدر */
+        header::before {
+            content: '';
+            display: block;
+            height: 4px;
+            background: linear-gradient(90deg, transparent 0%, var(--gold) 20%, var(--gold-light) 50%, var(--gold) 80%, transparent 100%);
+        }
+
+        /* خط ذهبي أسفل الهيدر */
+        header::after {
+            content: '';
+            display: block;
+            height: 3px;
+            background: linear-gradient(90deg, transparent 0%, var(--gold) 20%, var(--gold-light) 50%, var(--gold) 80%, transparent 100%);
+        }
+
+        /* ── الشريط الداخلي ── */
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* ── اللوجوين على اليمين ── */
+        .logos-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            order: 1; /* اليمين في RTL */
+        }
+
+        .logos-right img {
+            height: 80px;
+            width:  80px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.95);
+            padding: 4px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0 0 2px rgba(218,165,32,0.4);
+            transition: transform 0.3s ease;
+        }
+
+        .logos-right img:hover { transform: scale(1.06); }
+
+        /* ── فاصل عمودي بين اللوجوين ── */
+        .logo-divider {
+            width: 1px;
+            height: 60px;
+            background: linear-gradient(to bottom, transparent, rgba(218,165,32,0.5), transparent);
+        }
+
+        /* ── النص المركزي ── */
+        .header-center {
+            flex: 1;
+            text-align: center;
+            order: 2;
+        }
+
+        .header-center .univ-name {
+            font-family: 'Amiri', serif;
+            font-size: clamp(20px, 3.5vw, 34px);
+            color: var(--gold-light);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            line-height: 1.3;
+        }
+
+        .header-center .dept-name {
+            font-family: 'Cairo', sans-serif;
+            font-size: clamp(13px, 2vw, 18px);
+            color: rgba(255,255,255,0.85);
+            margin-top: 4px;
+            font-weight: 400;
+        }
+
+        .header-center .platform-badge {
+            display: inline-block;
+            margin-top: 8px;
+            background: rgba(218,165,32,0.15);
+            border: 1px solid rgba(218,165,32,0.35);
+            color: var(--gold-pale);
+            font-size: 12px;
+            padding: 3px 14px;
+            border-radius: 20px;
+            font-family: 'Cairo', sans-serif;
+            letter-spacing: 0.3px;
+        }
+
+        /* ── معلومات الإشراف على اليسار ── */
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            order: 3;
+            min-width: 194px;
+        }
+
+        .supervision-box {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(218,165,32,0.3);
+            border-radius: 10px;
+            padding: 8px 14px;
+            text-align: right;
+        }
+
+        .supervision-box .sup-label {
+            font-size: 11px;
+            color: var(--gold-light);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            font-family: 'Cairo', sans-serif;
+            opacity: 0.9;
+        }
+
+        .supervision-box .sup-name {
+            font-family: 'Amiri', serif;
+            font-size: 13.5px;
+            color: rgba(255,255,255,0.92);
+            line-height: 1.8;
+            direction: rtl;
+        }
+
+        .supervision-box .sup-name span {
+            display: block;
+        }
+
+        /* ── بادج المطورين في أسفل الهيدر ── */
+        .dev-strip {
+            background: rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(218,165,32,0.15);
+            padding: 5px 32px;
+            display: flex;
+            justify-content: flex-end;   /* على اليسار في RTL = flex-end */
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dev-strip span {
+            font-size: 11px;
+            color: rgba(255,255,255,0.45);
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .dev-strip .dev-name {
+            color: var(--gold-light);
+            opacity: 0.75;
+            font-weight: 600;
+            font-size: 11.5px;
+            letter-spacing: 0.3px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 700px) {
+            .header-inner { justify-content: center; padding: 14px 16px; }
+            .header-left  { display: none; }
+            .logos-right  { order: 1; }
+            .header-center { order: 2; width: 100%; }
+            .logos-right img { height: 60px; width: 60px; }
+            .dev-strip { justify-content: center; padding: 5px 16px; }
+        }
+
+        /* ══════════════════════════════════════
+           Main Content
+        ══════════════════════════════════════ */
+        main {
+            flex: 1;
+            position: relative; z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* ══════════════════════════════════════
+           SCREEN: Search
+        ══════════════════════════════════════ */
+        .screen { display: none; width: 100%; max-width: 620px; animation: fadeIn 0.5s ease; }
+        .screen.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 48px 40px;
+            box-shadow:
+                0 4px 6px -1px rgba(0,0,0,0.05),
+                0 10px 40px -5px var(--shadow),
+                0 0 0 1px rgba(184,134,11,0.1);
+            text-align: center;
+        }
+
+        .card-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .card h2 {
+            font-family: 'Amiri', serif;
+            font-size: 28px;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+
+        .card .subtitle {
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 36px;
+            line-height: 1.7;
+        }
+
+        /* ── Input ── */
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 20px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 18px;
+            border: 2px solid #e5d9b5;
+            border-radius: var(--radius-sm);
+            background: var(--cream);
+            color: var(--dark);
+            outline: none;
+            transition: border-color var(--transition), box-shadow var(--transition);
+            text-align: center;
+            direction: rtl;
+        }
+
+        .input-group input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 4px rgba(184,134,11,0.12);
+        }
+
+        .input-group input::placeholder { color: #bfaa77; }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center; justify-content: center;
+            gap: 10px;
+            padding: 14px 32px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            border: none; border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(184,134,11,0.35);
+            width: 100%;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(184,134,11,0.45);
+        }
+
+        .btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+        .btn-primary:disabled {
+            opacity: 0.6; cursor: not-allowed;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--gold);
+            color: var(--gold);
+            padding: 12px 24px;
+        }
+
+        .btn-outline:hover { background: var(--gold-pale); }
+
+        .btn-success {
+            background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(22,163,74,0.35);
+        }
+
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(22,163,74,0.45); }
+
+        /* ── Spinner ── */
+        .spinner {
+            width: 22px; height: 22px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Alert / Message ── */
+        .alert {
+            padding: 14px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            margin-top: 16px;
+            display: none;
+        }
+        .alert.show { display: block; animation: fadeIn 0.3s ease; }
+        .alert-error   { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+        .alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+        .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+
+        /* ── Suggestions ── */
+        .suggestions-box {
+            background: var(--cream);
+            border: 1px solid var(--gold-pale);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            margin-top: 16px;
+            text-align: right;
+        }
+
+        .suggestions-box p {
+            font-size: 14px; color: var(--text-muted); margin-bottom: 12px;
+        }
+
+        .suggestion-btn {
+            display: block; width: 100%;
+            padding: 12px 16px; margin-bottom: 8px;
+            background: white; border: 1px solid #e5d9b5;
+            border-radius: 8px; cursor: pointer;
+            font-family: 'Cairo', sans-serif; font-size: 16px;
+            color: var(--dark); text-align: right;
+            transition: all var(--transition);
+        }
+        .suggestion-btn:hover { border-color: var(--gold); background: var(--gold-pale); }
+
+        /* ══════════════════════════════════════
+           SCREEN: Preview
+        ══════════════════════════════════════ */
+        #screen-preview .card { max-width: 900px; }
+
+        .preview-name-badge {
+            display: inline-block;
+            background: var(--gold-pale);
+            border: 1px solid var(--gold-light);
+            color: var(--dark);
+            font-family: 'Amiri', serif;
+            font-size: 22px;
+            padding: 8px 24px;
+            border-radius: 30px;
+            margin-bottom: 24px;
+        }
+
+        .cert-preview-container {
+            border: 2px solid var(--gold-pale);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 24px 0;
+            background: #f9f5e8;
+            min-height: 250px;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+
+        .cert-preview-container img {
+            width: 100%;
+            display: block;
+            border-radius: 10px;
+        }
+
+        .cert-loading {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 16px;
+            background: rgba(253,250,242,0.9);
+        }
+
+        .cert-loading .spin-gold {
+            width: 50px; height: 50px;
+            border: 4px solid var(--gold-pale);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .cert-loading p { color: var(--text-muted); font-size: 14px; }
+
+        .preview-actions {
+            display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+        }
+
+        /* ══════════════════════════════════════
+           SCREEN: Thank You / Done
+        ══════════════════════════════════════ */
+        #screen-done { text-align: center; }
+
+        .confetti-container {
+            position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+            overflow: hidden;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px; height: 14px;
+            top: -20px;
+            border-radius: 2px;
+            animation: confettiFall linear forwards;
+        }
+
+        @keyframes confettiFall {
+            to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        .done-icon {
+            font-size: 80px;
+            display: block;
+            margin-bottom: 20px;
+            animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        @keyframes bounceIn {
+            0%   { transform: scale(0); opacity: 0; }
+            60%  { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ══════════════════════════════════════
+           Conference Strip (في الهيدر)
+        ══════════════════════════════════════ */
+        .conference-strip {
+            background: rgba(218,165,32,0.12);
+            border-top:    1px solid rgba(218,165,32,0.25);
+            border-bottom: 1px solid rgba(218,165,32,0.25);
+            padding: 7px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .conference-strip .conf-title {
+            font-family: 'Amiri', serif;
+            font-size: clamp(13px, 2vw, 17px);
+            color: var(--gold-light);
+            letter-spacing: 0.3px;
+            text-align: center;
+        }
+
+        .conference-strip .conf-icon {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        /* ══════════════════════════════════════
+           Footer
+        ══════════════════════════════════════ */
+        footer {
+            position: relative; z-index: 1;
+            text-align: center;
+            padding: 14px 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+            border-top: 1px solid rgba(184,134,11,0.15);
+            background: rgba(253,250,242,0.8);
+        }
+
+        footer .footer-conf {
+            font-family: 'Amiri', serif;
+            font-size: 14px;
+            color: var(--gold);
+            margin-bottom: 5px;
+            opacity: 0.85;
+        }
+
+        footer .footer-copy {
+            color: var(--text-muted);
+            font-size: 12.5px;
+        }
+
+        footer .footer-dev {
+            color: var(--gold);
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        /* ══════════════════════════════════════
+           Responsive
+        ══════════════════════════════════════ */
+        @media (max-width: 480px) {
+            header { padding: 16px 20px; }
+            .card { padding: 32px 20px; }
+            .preview-actions { flex-direction: column; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+    <!-- الشريط الرئيسي: لوجوين + نص + إشراف -->
+    <div class="header-inner">
+
+        <!-- اللوجوين على اليمين -->
+        <div class="logos-right">
+            <img src="/static/images/logo_knu.png"
+                 alt="شعار جامعة كفر الشيخ الأهلية"
+                 title="جامعة كفر الشيخ الأهلية">
+            <div class="logo-divider"></div>
+            <img src="/static/images/logo_student_affairs.png"
+                 alt="شعار الإدارة العامة لرعاية الطلاب"
+                 title="الإدارة العامة لرعاية الطلاب">
+        </div>
+
+        <!-- النص المركزي -->
+        <div class="header-center">
+            <div class="univ-name">جامعة كفر الشيخ الأهلية</div>
+            <div class="dept-name">الإدارة العامة لرعاية الطلاب</div>
+            <span class="platform-badge">✦ منصة إصدار الشهادات الإلكترونية ✦</span>
+        </div>
+
+        <!-- معلومات الإشراف على اليسار -->
+        <div class="header-left">
+            <div class="supervision-box">
+                <div class="sup-label">— تحت إشراف —</div>
+                <div class="sup-name">
+                    <span>د. هناء السيد</span>
+                    <span>د. أحمد قايد</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- شريط اسم المؤتمر -->
+    <div class="conference-strip">
+        <span class="conf-icon">🎓</span>
+        <span class="conf-title">مؤتمر: الذكاء الاصطناعي في الطوارئ والإسعافات الأولية</span>
+        <span class="conf-icon">🎓</span>
+    </div>
+
+    <!-- شريط المطورين في الأسفل -->
+    <div class="dev-strip">
+        <span>Developed by</span>
+        <span class="dev-name">✦ Saif &amp; Zeyad ✦</span>
+    </div>
+</header>
+
+<!-- ═══ MAIN ═══ -->
+<main>
+
+    <!-- ── SCREEN 1: Search ── -->
+    <div class="screen active" id="screen-search">
+        <div class="card">
+            <span class="card-icon">📜</span>
+            <h2>استخراج الشهادة</h2>
+            <p class="subtitle">
+                أدخل اسمك كاملاً كما هو مسجّل،<br>
+                وسيتم التحقق منه وإصدار شهادتك على الفور.
+            </p>
+
+            <div class="input-group">
+                <input
+                    type="text"
+                    id="name-input"
+                    placeholder="اكتب اسمك الكامل هنا..."
+                    autocomplete="off"
+                    autofocus
+                />
+            </div>
+
+            <button class="btn btn-primary" id="search-btn" onclick="searchName()">
+                <span id="search-btn-text">🔍 ابحث عن شهادتي</span>
+                <span id="search-spinner" style="display:none;"><span class="spinner"></span></span>
+            </button>
+
+            <!-- Error / Not Found -->
+            <div class="alert alert-error" id="error-msg"></div>
+
+            <!-- Suggestions (fuzzy match) -->
+            <div class="suggestions-box" id="suggestions-box" style="display:none;">
+                <p>⚠️ لم نجد اسمك بشكل دقيق، هل تقصد أحد هؤلاء؟</p>
+                <div id="suggestions-list"></div>
+                <button class="btn btn-outline" style="margin-top:8px; width:100%;" onclick="resetSearch()">
+                    🔄 أدخل الاسم مجدداً
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SCREEN 2: Preview ── -->
+    <div class="screen" id="screen-preview" style="max-width:900px;">
+        <div class="card">
+            <h2>🎉 تم العثور على شهادتك!</h2>
+            <p class="subtitle">تأكد من صحة الاسم ثم حمّل شهادتك بصيغة PDF</p>
+
+            <div class="preview-name-badge" id="preview-name-badge">---</div>
+
+            <!-- Certificate Preview Image -->
+            <div class="cert-preview-container" id="cert-container">
+                <div class="cert-loading" id="cert-loading">
+                    <div class="spin-gold"></div>
+                    <p>جاري تحضير شهادتك...</p>
+                </div>
+                <img id="cert-preview-img" src="" alt="معاينة الشهادة" style="display:none;" />
+            </div>
+
+            <div class="preview-actions">
+                <button class="btn btn-success" id="download-btn" onclick="downloadCertificate()">
+                    <span id="dl-btn-text">⬇️ تحميل الشهادة PDF</span>
+                    <span id="dl-spinner" style="display:none;"><span class="spinner"></span></span>
+                </button>
+                <button class="btn btn-outline" onclick="resetSearch()">
+                    🔄 العودة للبحث
+                </button>
+            </div>
+
+            <div class="alert alert-error" id="download-error" style="margin-top:16px;"></div>
+        </div>
+    </div>
+
+    <!-- ── SCREEN 3: Done ── -->
+    <div class="screen" id="screen-done">
+        <div class="card">
+            <span class="done-icon">🎊</span>
+            <h2>تم تحميل شهادتك بنجاح!</h2>
+            <p class="subtitle" id="done-message">
+                مبروك! جاهزة للطباعة في أي وقت.<br>
+                نتمنى لك التوفيق والنجاح دائماً.
+            </p>
+            <br>
+            <button class="btn btn-primary" style="width: auto; padding: 14px 40px;" onclick="resetSearch()">
+                🏠 العودة للصفحة الرئيسية
+            </button>
+        </div>
+    </div>
+
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+    <p class="footer-conf">مؤتمر الذكاء الاصطناعي في الطوارئ والإسعافات الأولية</p>
+    <p class="footer-copy">جميع الحقوق محفوظة &copy; 2026 &nbsp;|&nbsp; <span class="footer-dev">Saif &amp; Zeyad</span></p>
+</footer>
+
+<!-- ═══ CONFETTI ═══ -->
+<div class="confetti-container" id="confetti-container"></div>
+
+<!-- ═══ JAVASCRIPT ═══ -->
+<script>
+    // ── State ──
+    let confirmedName = '';
+
+    // ── Helpers ──
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function showAlert(id, msg) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.classList.add('show');
+    }
+
+    function hideAlert(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    function setSearchLoading(loading) {
+        document.getElementById('search-btn').disabled = loading;
+        document.getElementById('search-btn-text').style.display = loading ? 'none' : '';
+        document.getElementById('search-spinner').style.display = loading ? '' : 'none';
+    }
+
+    // ── Search ──
+    async function searchName() {
+        const name = document.getElementById('name-input').value.trim();
+        if (!name) { showAlert('error-msg', '⚠️ يرجى كتابة اسمك أولاً'); return; }
+
+        hideAlert('error-msg');
+        document.getElementById('suggestions-box').style.display = 'none';
+        setSearchLoading(true);
+
+        try {
+            const res  = await fetch('/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            const data = await res.json();
+
+            if (data.status === 'found') {
+                confirmedName = data.original_name;
+                goToPreview(confirmedName);
+
+            } else if (data.status === 'confirm') {
+                // عرض الاقتراحات
+                const list = document.getElementById('suggestions-list');
+                list.innerHTML = '';
+                data.suggestions.forEach(s => {
+                    const btn = document.createElement('button');
+                    btn.className = 'suggestion-btn';
+                    btn.innerHTML = `✅ ${s.name} <small style="color:#7a6035;">(تطابق ${s.score}%)</small>`;
+                    btn.onclick = () => { confirmedName = s.name; goToPreview(s.name); };
+                    list.appendChild(btn);
+                });
+                document.getElementById('suggestions-box').style.display = 'block';
+
+            } else {
+                showAlert('error-msg', data.message || 'لم يتم العثور على اسمك في القائمة.');
+            }
+        } catch (err) {
+            showAlert('error-msg', '❌ حدث خطأ في الاتصال، حاول مرة أخرى.');
+        } finally {
+            setSearchLoading(false);
+        }
+    }
+
+    // ── Go To Preview ──
+    async function goToPreview(name) {
+        showScreen('screen-preview');
+        document.getElementById('preview-name-badge').textContent = name;
+        document.getElementById('cert-preview-img').style.display = 'none';
+        document.getElementById('cert-loading').style.display = 'flex';
+        hideAlert('download-error');
+
+        try {
+            const res  = await fetch('/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            const data = await res.json();
+
+            if (data.status === 'ok') {
+                const img = document.getElementById('cert-preview-img');
+                img.src = data.image;
+                img.style.display = 'block';
+                document.getElementById('cert-loading').style.display = 'none';
+            } else {
+                document.getElementById('cert-loading').innerHTML = '<p style="color:#dc2626;">⚠️ تعذّر تحميل المعاينة</p>';
+            }
+        } catch {
+            document.getElementById('cert-loading').innerHTML = '<p style="color:#dc2626;">⚠️ خطأ في الاتصال</p>';
+        }
+    }
+
+    // ── Download ──
+    async function downloadCertificate() {
+        if (!confirmedName) return;
+
+        const btn = document.getElementById('download-btn');
+        btn.disabled = true;
+        document.getElementById('dl-btn-text').style.display = 'none';
+        document.getElementById('dl-spinner').style.display = '';
+        hideAlert('download-error');
+
+        try {
+            const res = await fetch('/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: confirmedName })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                showAlert('download-error', err.message || 'حدث خطأ أثناء التحميل');
+                return;
+            }
+
+            // تنزيل الملف
+            const blob     = await res.blob();
+            const url      = URL.createObjectURL(blob);
+            const a        = document.createElement('a');
+            a.href         = url;
+            a.download     = `شهادة_${confirmedName}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // شاشة الخاتمة
+            setTimeout(() => {
+                showScreen('screen-done');
+                document.getElementById('done-message').innerHTML =
+                    `مبروك <strong>${confirmedName}</strong>!<br>شهادتك جاهزة للطباعة. نتمنى لك التوفيق والنجاح دائماً 🌟`;
+                launchConfetti();
+            }, 500);
+
+        } catch {
+            showAlert('download-error', '❌ حدث خطأ، يرجى المحاولة مجدداً');
+        } finally {
+            btn.disabled = false;
+            document.getElementById('dl-btn-text').style.display = '';
+            document.getElementById('dl-spinner').style.display = 'none';
+        }
+    }
+
+    // ── Confetti ──
+    function launchConfetti() {
+        const container = document.getElementById('confetti-container');
+        container.innerHTML = '';
+        const colors = ['#daa520','#b8860b','#ffd700','#ff6b6b','#4ecdc4','#95e1d3','#f38181'];
+        for (let i = 0; i < 120; i++) {
+            const piece = document.createElement('div');
+            piece.className = 'confetti-piece';
+            piece.style.left      = Math.random() * 100 + 'vw';
+            piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+            piece.style.transform  = `rotate(${Math.random() * 360}deg)`;
+            piece.style.width      = (Math.random() * 8 + 6) + 'px';
+            piece.style.height     = (Math.random() * 10 + 8) + 'px';
+            piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            piece.style.animationDelay    = (Math.random() * 1.5)   + 's';
+            container.appendChild(piece);
+        }
+        setTimeout(() => container.innerHTML = '', 5000);
+    }
+
+    // ── Reset ──
+    function resetSearch() {
+        confirmedName = '';
+        document.getElementById('name-input').value = '';
+        hideAlert('error-msg');
+        document.getElementById('suggestions-box').style.display = 'none';
+        showScreen('screen-search');
+        document.getElementById('name-input').focus();
+    }
+
+    // ── Enter Key ──
+    document.getElementById('name-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') searchName();
+    });
+</script>
+
+</body>
+</html>
