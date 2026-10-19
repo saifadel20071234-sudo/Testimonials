@@ -174,8 +174,6 @@ def generate_certificate(student_name: str) -> bytes:
     import arabic_reshaper
     from bidi.algorithm import get_display
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    
     # ─── تجهيز النص العربي للعرض الصحيح ───
     reshaped_name = arabic_reshaper.reshape(student_name)
     bidi_name     = get_display(reshaped_name)
@@ -210,29 +208,13 @@ def generate_certificate(student_name: str) -> bytes:
         fill=NAME_FONT_COLOR
     )
 
-    # ─── تحويل لـ PDF ───
+    # ─── تحويل لـ PDF مباشرة في الذاكرة بدون لمس القرص ───
     img_rgb = img.convert('RGB')
     pdf_buffer = BytesIO()
-    
-    # حجم الـ PDF: A4 أفقي
-    page_w, page_h = landscape(A4)
-    
-    c = canvas.Canvas(pdf_buffer, pagesize=landscape(A4))
-    
-    # حفظ الصورة مؤقتاً
-    temp_img_path = os.path.join(OUTPUT_DIR, f'_tmp_{id(student_name)}.jpg')
-    img_rgb.save(temp_img_path, 'JPEG', quality=95)
-    
-    # رسم الصورة في الـ PDF
-    c.drawImage(temp_img_path, 0, 0, width=page_w, height=page_h)
-    c.save()
-    
-    # حذف الملف المؤقت
-    if os.path.exists(temp_img_path):
-        os.remove(temp_img_path)
-    
+    img_rgb.save(pdf_buffer, format='PDF', resolution=150.0)
     pdf_buffer.seek(0)
     return pdf_buffer.read()
+
 
 
 def _create_placeholder_certificate() -> Image.Image:
