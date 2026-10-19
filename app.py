@@ -24,7 +24,6 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max upload
 EXCEL_PATH         = os.path.join(os.path.dirname(__file__), 'data', 'students.xlsx')
 CERT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'static', 'images', 'certificate_template.png')
 LOGO_PATH          = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo.png')
-OUTPUT_DIR         = os.path.join(os.path.dirname(__file__), 'generated_certs')
 
 # موضع اسم الطالب على الشهادة (X، Y) — عدّل حسب تصميمك
 NAME_POSITION      = (0.5, 0.52)   # نسبة من عرض/ارتفاع الصورة (المنتصف أفقياً + 52% رأسياً)
