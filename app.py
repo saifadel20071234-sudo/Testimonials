@@ -33,13 +33,9 @@ CONFERENCES = {
 
 CERT_TEMPLATE_PATH = os.path.join(BASE_DIR, 'static', 'images', 'certificate_template.png')
 LOGO_PATH          = os.path.join(BASE_DIR, 'static', 'images', 'logo.png')
+FONTS_DIR          = os.path.join(BASE_DIR, 'static', 'fonts')
 
-# موضع اسم الطالب على الشهادة (X، Y) — نسبة من الحجم
-NAME_POSITION   = (0.5, 0.52)
-NAME_FONT_SIZE  = 80
-NAME_FONT_COLOR = (0, 0, 0)
-
-FUZZY_THRESHOLD = 70
+FUZZY_THRESHOLD    = 70
 
 
 # ─────────────────────────────────────────
@@ -92,7 +88,6 @@ def load_students(conference_id: str) -> dict:
         wb = openpyxl.load_workbook(excel_path, read_only=True)
         ws = wb.active
 
-        # نتخطى السطر الأول لو كان header
         first_row = True
         for row in ws.iter_rows():
             cell = row[0]  # العمود A
@@ -101,7 +96,6 @@ def load_students(conference_id: str) -> dict:
 
             name = str(cell.value).strip()
 
-            # تخطي الـ header
             if first_row and ('اسم' in name or 'الاسم' in name or 'name' in name.lower()):
                 first_row = False
                 continue
@@ -123,20 +117,13 @@ def load_students(conference_id: str) -> dict:
 #  البحث الذكي عن الاسم
 # ─────────────────────────────────────────
 def find_student(query: str, students: dict) -> dict:
-    """
-    يبحث عن الاسم بذكاء ويعيد:
-    - found: True/False
-    - original_name: الاسم الأصلي في الملف
-    - score: نسبة التشابه
-    - suggestions: اقتراحات لو مافيش تطابق كامل
-    """
     if not query or not students:
         return {'found': False, 'original_name': None, 'score': 0, 'suggestions': []}
 
     normalized_query = normalize_arabic(query)
     normalized_list  = list(students.keys())
 
-    # أولاً: تطابق تام (بعد التوحيد)
+    # أولاً: تطابق تام
     if normalized_query in students:
         return {
             'found': True,
@@ -174,119 +161,150 @@ def find_student(query: str, students: dict) -> dict:
 
 
 # ─────────────────────────────────────────
-#  Certificate Generation
-#  توليد الشهادة
+#  Font Loading
 # ─────────────────────────────────────────
-def generate_certificate(student_name: str) -> bytes:
-    """
-    يولّد ملف PDF للشهادة مع اسم الطالب.
-    لو في template صورة يستخدمها، لو لأ يعمل placeholder جميل.
-    """
+def _load_arabic_font(size: int, bold: bool = True):
+    """يحمّل خط عربي بالحجم المطلوب، مع إعطاء الأولوية للخطوط المرفقة في المشروع"""
+    preferred_names = ['arialbd.ttf', 'tahomabd.ttf', 'timesbd.ttf', 'arial.ttf', 'tahoma.ttf'] if bold else ['arial.ttf', 'tahoma.ttf']
+
+    # 1. الخطوط المرفقة مع المشروع
+    if os.path.exists(FONTS_DIR):
+        for fname in preferred_names:
+            p = os.path.join(FONTS_DIR, fname)
+            if os.path.exists(p):
+                try:
+                    return ImageFont.truetype(p, size)
+                except Exception:
+                    continue
+
+    # 2. خطوط ويندوز كبديل
+    win_fonts = [
+        r'C:\Windows\Fonts\arialbd.ttf',
+        r'C:\Windows\Fonts\tahoma.ttf',
+        r'C:\Windows\Fonts\arial.ttf',
+        r'C:\Windows\Fonts\times.ttf',
+    ]
+    for path in win_fonts:
+        if os.path.exists(path):
+            try:
+                return ImageFont.truetype(path, size)
+            except Exception:
+                continue
+
+    # 3. Fallback
+    return ImageFont.load_default()
+
+
+# ─────────────────────────────────────────
+#  Certificate Image Rendering
+# ─────────────────────────────────────────
+def render_certificate_image(student_name: str, conference_id: str) -> Image.Image:
+    """يبني صورة الشهادة كاملة بدمج القالب مع اسم الطالب والمؤتمر"""
     import arabic_reshaper
     from bidi.algorithm import get_display
 
-    # ─── تجهيز النص العربي للعرض الصحيح ───
-    reshaped_name = arabic_reshaper.reshape(student_name)
-    bidi_name     = get_display(reshaped_name)
+    conf = CONFERENCES.get(conference_id, CONFERENCES['ai_emergency'])
+    conf_title = conf['name']
 
-    # ─── تحديد إذا في template ───
     has_template = os.path.exists(CERT_TEMPLATE_PATH)
-
-    # ─── بناء الصورة ───
     if has_template:
-        img = Image.open(CERT_TEMPLATE_PATH).convert('RGBA')
+        img = Image.open(CERT_TEMPLATE_PATH).convert('RGB')
     else:
         img = _create_placeholder_certificate()
 
     draw = ImageDraw.Draw(img)
     img_w, img_h = img.size
 
-    # ─── تحميل الخط ───
-    font = _load_arabic_font(NAME_FONT_SIZE)
+    # ── 1. اسم الطالب ──
+    # الطالب / موجودة عند X ~ 700..800، والاسم في المساحة المخصصة (X: 100..680)
+    name_font_size = 31
+    f_name = _load_arabic_font(name_font_size, bold=True)
+    reshaped_name = arabic_reshaper.reshape(student_name)
+    bidi_name     = get_display(reshaped_name)
 
-    # ─── حساب موضع الاسم ───
-    name_x = int(img_w * NAME_POSITION[0])
-    name_y = int(img_h * NAME_POSITION[1])
+    bbox_name = draw.textbbox((0, 0), bidi_name, font=f_name)
+    nw = bbox_name[2] - bbox_name[0]
+    nh = bbox_name[3] - bbox_name[1]
 
-    # ─── رسم الاسم في المنتصف ───
-    bbox = draw.textbbox((0, 0), bidi_name, font=font)
-    text_w = bbox[2] - bbox[0]
-    text_h = bbox[3] - bbox[1]
+    # ضبط الحجم تلقائياً لو الاسم طويل
+    max_name_width = 560
+    while nw > max_name_width and name_font_size > 18:
+        name_font_size -= 2
+        f_name = _load_arabic_font(name_font_size, bold=True)
+        bbox_name = draw.textbbox((0, 0), bidi_name, font=f_name)
+        nw = bbox_name[2] - bbox_name[0]
+        nh = bbox_name[3] - bbox_name[1]
+
+    # رسم اسم الطالب في مركزه المخصص (X: 390، Y: 361)
+    name_center_x = int(img_w * 0.398)
+    name_center_y = int(img_h * 0.547)
     draw.text(
-        (name_x - text_w // 2, name_y - text_h // 2),
+        (name_center_x - nw // 2, name_center_y - nh // 2),
         bidi_name,
-        font=font,
-        fill=NAME_FONT_COLOR
+        font=f_name,
+        fill=(12, 37, 72)  # كحلي نيلي أنيق
     )
 
-    # ─── تحويل لـ PDF مباشرة في الذاكرة بدون لمس القرص ───
-    img_rgb = img.convert('RGB')
+    # ── 2. اسم المؤتمر ──
+    # أسفل عبارة «وذلك لمشاركته في تنظيم فعاليات»، في منتصف الصفحة أفقياً
+    conf_font_size = 25
+    f_conf = _load_arabic_font(conf_font_size, bold=True)
+    reshaped_conf = arabic_reshaper.reshape(conf_title)
+    bidi_conf     = get_display(reshaped_conf)
+
+    bbox_conf = draw.textbbox((0, 0), bidi_conf, font=f_conf)
+    cw = bbox_conf[2] - bbox_conf[0]
+    ch = bbox_conf[3] - bbox_conf[1]
+
+    max_conf_width = 800
+    while cw > max_conf_width and conf_font_size > 16:
+        conf_font_size -= 2
+        f_conf = _load_arabic_font(conf_font_size, bold=True)
+        bbox_conf = draw.textbbox((0, 0), bidi_conf, font=f_conf)
+        cw = bbox_conf[2] - bbox_conf[0]
+        ch = bbox_conf[3] - bbox_conf[1]
+
+    conf_center_x = int(img_w * 0.50)
+    conf_center_y = int(img_h * 0.709)
+    draw.text(
+        (conf_center_x - cw // 2, conf_center_y - ch // 2),
+        bidi_conf,
+        font=f_conf,
+        fill=(16, 53, 101)  # كحلي رعاية الطلاب
+    )
+
+    return img
+
+
+# ─────────────────────────────────────────
+#  Certificate PDF Generation
+# ─────────────────────────────────────────
+def generate_certificate(student_name: str, conference_id: str) -> bytes:
+    """يولّد ملف PDF للشهادة مع اسم الطالب واسم المؤتمر في الذاكرة"""
+    img = render_certificate_image(student_name, conference_id)
     pdf_buffer = BytesIO()
-    img_rgb.save(pdf_buffer, format='PDF', resolution=150.0)
+    img.save(pdf_buffer, format='PDF', resolution=150.0)
     pdf_buffer.seek(0)
     return pdf_buffer.read()
 
 
 def _create_placeholder_certificate() -> Image.Image:
-    """ينشئ شهادة placeholder جميلة لحد ما يجي التصميم الحقيقي"""
-    # حجم A4 أفقي بدقة عالية (300 DPI)
-    w, h = 3508, 2480  # A4 landscape at 300 DPI
-    img = Image.new('RGBA', (w, h), (255, 255, 255, 255))
+    """fallback في حال عدم وجود القالب"""
+    w, h = 3508, 2480
+    img = Image.new('RGB', (w, h), (255, 255, 255))
     draw = ImageDraw.Draw(img)
-
-    # خلفية متدرجة كريمية
     for y in range(h):
         ratio = y / h
         r = int(255 - ratio * 15)
         g = int(248 - ratio * 10)
         b = int(220 - ratio * 20)
-        draw.line([(0, y), (w, y)], fill=(r, g, b, 255))
-
-    # إطار خارجي ذهبي
-    border = 60
+        draw.line([(0, y), (w, y)], fill=(r, g, b))
     gold  = (184, 134, 11)
     gold2 = (218, 165, 32)
-    draw.rectangle([border,     border,     w-border,     h-border    ], outline=gold,  width=8)
-    draw.rectangle([border+20,  border+20,  w-border-20,  h-border-20 ], outline=gold2, width=3)
-
-    # نقاط زينة في الزوايا
-    corner_size = 80
-    for cx, cy in [(border+10, border+10), (w-border-10, border+10),
-                   (border+10, h-border-10), (w-border-10, h-border-10)]:
-        draw.ellipse([cx-corner_size//2, cy-corner_size//2,
-                      cx+corner_size//2, cy+corner_size//2],
-                     fill=gold, outline=gold2, width=3)
-
-    # خط فاصل أفقي تحت العنوان
-    draw.line([(border+100, h//3 + 40), (w-border-100, h//3 + 40)], fill=gold, width=4)
-    draw.line([(border+200, h//3 + 50), (w-border-200, h//3 + 50)], fill=gold2, width=2)
-
+    border = 60
+    draw.rectangle([border, border, w-border, h-border], outline=gold, width=8)
+    draw.rectangle([border+20, border+20, w-border-20, h-border-20], outline=gold2, width=3)
     return img
-
-
-def _load_arabic_font(size: int):
-    """يحمّل خط عربي بالحجم المطلوب"""
-    font_paths = [
-        # Windows Arabic fonts
-        r'C:\Windows\Fonts\arial.ttf',
-        r'C:\Windows\Fonts\arialbd.ttf',
-        r'C:\Windows\Fonts\tahoma.ttf',
-        r'C:\Windows\Fonts\trebucbd.ttf',
-        r'C:\Windows\Fonts\times.ttf',
-        # Amiri / Cairo (لو متثبتة)
-        r'C:\Windows\Fonts\Amiri-Regular.ttf',
-        r'C:\Windows\Fonts\Cairo-Regular.ttf',
-    ]
-    for path in font_paths:
-        if os.path.exists(path):
-            try:
-                from PIL import ImageFont
-                return ImageFont.truetype(path, size)
-            except Exception:
-                continue
-    # fallback
-    from PIL import ImageFont
-    return ImageFont.load_default()
 
 
 # ─────────────────────────────────────────
@@ -295,15 +313,13 @@ def _load_arabic_font(size: int):
 
 @app.route('/')
 def index():
-    """الصفحة الرئيسية"""
     return render_template('index.html', conferences=CONFERENCES)
 
 
 @app.route('/search', methods=['POST'])
 def search():
-    """API: البحث عن اسم الطالب"""
-    data         = request.get_json(silent=True) or {}
-    query        = data.get('name', '').strip()
+    data          = request.get_json(silent=True) or {}
+    query         = data.get('name', '').strip()
     conference_id = data.get('conference', '').strip()
 
     if not query:
@@ -316,14 +332,12 @@ def search():
     result   = find_student(query, students)
 
     if result['found']:
-        # لو التشابه أقل من 100% — نطلب تأكيد
         if result['score'] < 100 and result['suggestions']:
             return jsonify({
                 'status': 'confirm',
                 'suggestions': result['suggestions'],
                 'entered_name': query
             })
-        # تطابق كامل أو واضح
         return jsonify({
             'status': 'found',
             'original_name': result['original_name'],
@@ -332,55 +346,28 @@ def search():
     else:
         return jsonify({
             'status': 'not_found',
-            'message': 'لم يتم العثور على اسمك. تأكد من كتابته بشكل صحيح أو تواصل مع المسؤول.'
+            'message': 'لم يتم العثور على اسمك في هذا المؤتمر. تأكد من كتابته بشكل صحيح أو اختيار المؤتمر الصحيح.'
         })
 
 
 @app.route('/preview', methods=['POST'])
 def preview():
-    """
-    API: معاينة الشهادة — يعيد الشهادة كـ PNG للعرض في المتصفح
-    """
-    data = request.get_json(silent=True) or {}
-    name = data.get('name', '').strip()
+    data          = request.get_json(silent=True) or {}
+    name          = data.get('name', '').strip()
+    conference_id = data.get('conference', 'ai_emergency').strip()
 
     if not name:
         return jsonify({'status': 'error', 'message': 'اسم غير صحيح'}), 400
 
     try:
-        import arabic_reshaper
-        from bidi.algorithm import get_display
+        img = render_certificate_image(name, conference_id)
 
-        # بناء الصورة للمعاينة
-        has_template = os.path.exists(CERT_TEMPLATE_PATH)
-        img = Image.open(CERT_TEMPLATE_PATH).convert('RGBA') if has_template else _create_placeholder_certificate()
-
-        draw  = ImageDraw.Draw(img)
-        img_w, img_h = img.size
-
-        reshaped_name = arabic_reshaper.reshape(name)
-        bidi_name     = get_display(reshaped_name)
-
-        font   = _load_arabic_font(NAME_FONT_SIZE)
-        name_x = int(img_w * NAME_POSITION[0])
-        name_y = int(img_h * NAME_POSITION[1])
-
-        bbox   = draw.textbbox((0, 0), bidi_name, font=font)
-        text_w = bbox[2] - bbox[0]
-        text_h = bbox[3] - bbox[1]
-        draw.text(
-            (name_x - text_w // 2, name_y - text_h // 2),
-            bidi_name,
-            font=font,
-            fill=NAME_FONT_COLOR
-        )
-
-        # تصغير للمعاينة (جودة عرض لا طباعة)
-        preview_img = img.convert('RGB')
+        # تصغير للمعاينة السريعة
+        preview_img = img.copy()
         preview_img.thumbnail((1200, 850), Image.LANCZOS)
 
         buf = BytesIO()
-        preview_img.save(buf, 'JPEG', quality=88)
+        preview_img.save(buf, 'JPEG', quality=90)
         buf.seek(0)
 
         import base64
@@ -393,10 +380,9 @@ def preview():
 
 @app.route('/download', methods=['POST'])
 def download():
-    """API: تحميل الشهادة كـ PDF"""
     data          = request.get_json(silent=True) or {}
     name          = data.get('name', '').strip()
-    conference_id = data.get('conference', '').strip()
+    conference_id = data.get('conference', 'ai_emergency').strip()
 
     if not name:
         return jsonify({'status': 'error', 'message': 'اسم غير صحيح'}), 400
@@ -404,7 +390,6 @@ def download():
     if conference_id not in CONFERENCES:
         return jsonify({'status': 'error', 'message': 'مؤتمر غير معروف'}), 400
 
-    # تحقق أن الاسم موجود في الملف فعلاً
     students = load_students(conference_id)
     result   = find_student(name, students)
     if not result['found']:
@@ -413,7 +398,7 @@ def download():
     official_name = result['original_name']
 
     try:
-        pdf_bytes = generate_certificate(official_name)
+        pdf_bytes = generate_certificate(official_name, conference_id)
         safe_name = re.sub(r'[^\w\s-]', '', official_name).strip().replace(' ', '_')
         filename  = f'شهادة_{safe_name}.pdf'
 
