@@ -10,28 +10,36 @@ from io import BytesIO
 from flask import Flask, render_template, request, jsonify, send_file
 import openpyxl
 from PIL import Image, ImageDraw, ImageFont
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.units import cm
 from fuzzywuzzy import fuzz, process
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max upload
 
 # ─────────────────────────────────────────
-#  CONFIG — سهل التعديل لاحقاً
+#  CONFIG — إعدادات المؤتمرات
 # ─────────────────────────────────────────
-EXCEL_PATH         = os.path.join(os.path.dirname(__file__), 'data', 'students.xlsx')
-CERT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'static', 'images', 'certificate_template.png')
-LOGO_PATH          = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo.png')
+BASE_DIR = os.path.dirname(__file__)
 
-# موضع اسم الطالب على الشهادة (X، Y) — عدّل حسب تصميمك
-NAME_POSITION      = (0.5, 0.52)   # نسبة من عرض/ارتفاع الصورة (المنتصف أفقياً + 52% رأسياً)
-NAME_FONT_SIZE     = 80            # حجم الخط
-NAME_FONT_COLOR    = (0, 0, 0)     # أسود — عدّل حسب تصميمك
+CONFERENCES = {
+    'ai_emergency': {
+        'name': 'مؤتمر: الذكاء الاصطناعي في الطوارئ والإسعافات الأولية',
+        'excel': os.path.join(BASE_DIR, 'data', 'ai_emergency.xlsx'),
+    },
+    'accounting': {
+        'name': 'مؤتمر: المحاسبة والإدارة المالية',
+        'excel': os.path.join(BASE_DIR, 'data', 'accounting.xlsx'),
+    },
+}
 
-FUZZY_THRESHOLD    = 70            # نسبة التشابه المطلوبة (0-100)
-STUDENTS_NAME_COL  = 'A'          # عمود الاسم في الإكسيل
+CERT_TEMPLATE_PATH = os.path.join(BASE_DIR, 'static', 'images', 'certificate_template.png')
+LOGO_PATH          = os.path.join(BASE_DIR, 'static', 'images', 'logo.png')
+
+# موضع اسم الطالب على الشهادة (X، Y) — نسبة من الحجم
+NAME_POSITION   = (0.5, 0.52)
+NAME_FONT_SIZE  = 80
+NAME_FONT_COLOR = (0, 0, 0)
+
+FUZZY_THRESHOLD = 70
 
 
 # ─────────────────────────────────────────
@@ -54,7 +62,7 @@ def normalize_arabic(text: str) -> str:
     text = re.sub(r'[\u064B-\u065F\u0670]', '', text)
     # توحيد الألف وأشكالها (أ إ آ أ) → ا
     text = re.sub(r'[أإآٱ]', 'ا', text)
-    # توحيد التاء المربوطة → ة  (نتركها هي) لكن نطابقها مع الهاء
+    # توحيد التاء المربوطة مع الهاء
     text = re.sub(r'[ةه]', 'ه', text)
     # توحيد الياء والألف المقصورة
     text = re.sub(r'[يى]', 'ي', text)
@@ -69,39 +77,44 @@ def normalize_arabic(text: str) -> str:
 #  Excel Loading
 #  تحميل بيانات الطلاب من الإكسيل
 # ─────────────────────────────────────────
-def load_students() -> dict:
-    """يحمّل الطلاب من ملف الإكسيل ويعيد قاموساً: normalized_name → original_name"""
+def load_students(conference_id: str) -> dict:
+    """يحمّل الطلاب من ملف الإكسيل الخاص بالمؤتمر ويعيد قاموساً: normalized_name → original_name"""
     students = {}
-    if not os.path.exists(EXCEL_PATH):
+    conf = CONFERENCES.get(conference_id)
+    if not conf:
         return students
-    
+
+    excel_path = conf['excel']
+    if not os.path.exists(excel_path):
+        return students
+
     try:
-        wb = openpyxl.load_workbook(EXCEL_PATH, read_only=True)
+        wb = openpyxl.load_workbook(excel_path, read_only=True)
         ws = wb.active
-        
-        # نتخطى السطر الأول لو كان header (يحتوي على كلمة "اسم" أو "الاسم")
+
+        # نتخطى السطر الأول لو كان header
         first_row = True
         for row in ws.iter_rows():
             cell = row[0]  # العمود A
             if cell.value is None:
                 continue
-            
+
             name = str(cell.value).strip()
-            
+
             # تخطي الـ header
             if first_row and ('اسم' in name or 'الاسم' in name or 'name' in name.lower()):
                 first_row = False
                 continue
             first_row = False
-            
+
             if name:
                 normalized = normalize_arabic(name)
                 students[normalized] = name  # normalized → original
-        
+
         wb.close()
     except Exception as e:
         print(f"❌ خطأ في قراءة الإكسيل: {e}")
-    
+
     return students
 
 
@@ -122,7 +135,7 @@ def find_student(query: str, students: dict) -> dict:
 
     normalized_query = normalize_arabic(query)
     normalized_list  = list(students.keys())
-    
+
     # أولاً: تطابق تام (بعد التوحيد)
     if normalized_query in students:
         return {
@@ -131,20 +144,19 @@ def find_student(query: str, students: dict) -> dict:
             'score': 100,
             'suggestions': []
         }
-    
+
     # ثانياً: Fuzzy Matching
     if normalized_list:
         results = process.extract(
             normalized_query,
             normalized_list,
-            scorer=fuzz.token_sort_ratio,  # أنسب scorer للأسماء العربية
+            scorer=fuzz.token_sort_ratio,
             limit=3
         )
-        
+
         top_match, top_score = results[0][0], results[0][1]
-        
+
         if top_score >= FUZZY_THRESHOLD:
-            # تطابق كافٍ — نقترح الاسم للتأكيد
             original = students[top_match]
             suggestions = [
                 {'name': students[r[0]], 'score': r[1]}
@@ -157,7 +169,7 @@ def find_student(query: str, students: dict) -> dict:
                 'score': top_score,
                 'suggestions': suggestions if top_score < 100 else []
             }
-    
+
     return {'found': False, 'original_name': None, 'score': 0, 'suggestions': []}
 
 
@@ -179,13 +191,13 @@ def generate_certificate(student_name: str) -> bytes:
 
     # ─── تحديد إذا في template ───
     has_template = os.path.exists(CERT_TEMPLATE_PATH)
-    
+
     # ─── بناء الصورة ───
     if has_template:
         img = Image.open(CERT_TEMPLATE_PATH).convert('RGBA')
     else:
         img = _create_placeholder_certificate()
-    
+
     draw = ImageDraw.Draw(img)
     img_w, img_h = img.size
 
@@ -215,14 +227,13 @@ def generate_certificate(student_name: str) -> bytes:
     return pdf_buffer.read()
 
 
-
 def _create_placeholder_certificate() -> Image.Image:
     """ينشئ شهادة placeholder جميلة لحد ما يجي التصميم الحقيقي"""
     # حجم A4 أفقي بدقة عالية (300 DPI)
     w, h = 3508, 2480  # A4 landscape at 300 DPI
     img = Image.new('RGBA', (w, h), (255, 255, 255, 255))
     draw = ImageDraw.Draw(img)
-    
+
     # خلفية متدرجة كريمية
     for y in range(h):
         ratio = y / h
@@ -230,14 +241,14 @@ def _create_placeholder_certificate() -> Image.Image:
         g = int(248 - ratio * 10)
         b = int(220 - ratio * 20)
         draw.line([(0, y), (w, y)], fill=(r, g, b, 255))
-    
+
     # إطار خارجي ذهبي
     border = 60
     gold  = (184, 134, 11)
     gold2 = (218, 165, 32)
     draw.rectangle([border,     border,     w-border,     h-border    ], outline=gold,  width=8)
     draw.rectangle([border+20,  border+20,  w-border-20,  h-border-20 ], outline=gold2, width=3)
-    
+
     # نقاط زينة في الزوايا
     corner_size = 80
     for cx, cy in [(border+10, border+10), (w-border-10, border+10),
@@ -245,11 +256,11 @@ def _create_placeholder_certificate() -> Image.Image:
         draw.ellipse([cx-corner_size//2, cy-corner_size//2,
                       cx+corner_size//2, cy+corner_size//2],
                      fill=gold, outline=gold2, width=3)
-    
+
     # خط فاصل أفقي تحت العنوان
     draw.line([(border+100, h//3 + 40), (w-border-100, h//3 + 40)], fill=gold, width=4)
     draw.line([(border+200, h//3 + 50), (w-border-200, h//3 + 50)], fill=gold2, width=2)
-    
+
     return img
 
 
@@ -284,22 +295,26 @@ def _load_arabic_font(size: int):
 
 @app.route('/')
 def index():
-    """الصفحة الرئيسية — البحث عن الاسم"""
-    return render_template('index.html')
+    """الصفحة الرئيسية"""
+    return render_template('index.html', conferences=CONFERENCES)
 
 
 @app.route('/search', methods=['POST'])
 def search():
     """API: البحث عن اسم الطالب"""
-    data  = request.get_json(silent=True) or {}
-    query = data.get('name', '').strip()
-    
+    data         = request.get_json(silent=True) or {}
+    query        = data.get('name', '').strip()
+    conference_id = data.get('conference', '').strip()
+
     if not query:
         return jsonify({'status': 'error', 'message': 'يرجى إدخال الاسم'}), 400
-    
-    students = load_students()
+
+    if conference_id not in CONFERENCES:
+        return jsonify({'status': 'error', 'message': 'مؤتمر غير معروف'}), 400
+
+    students = load_students(conference_id)
     result   = find_student(query, students)
-    
+
     if result['found']:
         # لو التشابه أقل من 100% — نطلب تأكيد
         if result['score'] < 100 and result['suggestions']:
@@ -328,7 +343,7 @@ def preview():
     """
     data = request.get_json(silent=True) or {}
     name = data.get('name', '').strip()
-    
+
     if not name:
         return jsonify({'status': 'error', 'message': 'اسم غير صحيح'}), 400
 
@@ -379,25 +394,29 @@ def preview():
 @app.route('/download', methods=['POST'])
 def download():
     """API: تحميل الشهادة كـ PDF"""
-    data = request.get_json(silent=True) or {}
-    name = data.get('name', '').strip()
-    
+    data          = request.get_json(silent=True) or {}
+    name          = data.get('name', '').strip()
+    conference_id = data.get('conference', '').strip()
+
     if not name:
         return jsonify({'status': 'error', 'message': 'اسم غير صحيح'}), 400
-    
+
+    if conference_id not in CONFERENCES:
+        return jsonify({'status': 'error', 'message': 'مؤتمر غير معروف'}), 400
+
     # تحقق أن الاسم موجود في الملف فعلاً
-    students = load_students()
+    students = load_students(conference_id)
     result   = find_student(name, students)
     if not result['found']:
         return jsonify({'status': 'error', 'message': 'الاسم غير موجود'}), 403
-    
+
     official_name = result['original_name']
-    
+
     try:
         pdf_bytes = generate_certificate(official_name)
         safe_name = re.sub(r'[^\w\s-]', '', official_name).strip().replace(' ', '_')
         filename  = f'شهادة_{safe_name}.pdf'
-        
+
         return send_file(
             BytesIO(pdf_bytes),
             mimetype='application/pdf',
@@ -409,12 +428,5 @@ def download():
 
 
 if __name__ == '__main__':
-    # إنشاء البيانات التجريبية لو مافيش
-    if not os.path.exists(EXCEL_PATH):
-        print("Creating sample data...")
-        import subprocess
-        subprocess.run(['py', '-3.13', 'create_sample_data.py'],
-                       cwd=os.path.dirname(__file__), check=False)
-    
     print("Starting Certificate System on http://localhost:5000 ...")
     app.run(debug=True, host='0.0.0.0', port=5000)
