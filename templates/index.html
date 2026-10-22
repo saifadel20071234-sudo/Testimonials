@@ -760,9 +760,25 @@
                 <input
                     type="text"
                     id="faculty-input"
-                    placeholder="اكتب اسم كليتك (مثال: كلية الحاسبات والمعلومات)..."
+                    list="faculties-list"
+                    placeholder="اختر أو اكتب اسم كليتك..."
                     autocomplete="off"
                 />
+                <datalist id="faculties-list">
+                    <option value="كلية الطب البشري"></option>
+                    <option value="كلية طب الفم والأسنان"></option>
+                    <option value="كلية العلاج الطبيعي"></option>
+                    <option value="كلية الصيدلة"></option>
+                    <option value="كلية التمريض"></option>
+                    <option value="كلية الطب البيطري"></option>
+                    <option value="كلية الزراعة"></option>
+                    <option value="كلية الهندسة"></option>
+                    <option value="كلية الحاسبات والمعلومات والذكاء الاصطناعي"></option>
+                    <option value="كلية العلوم"></option>
+                    <option value="كلية اللغات والعلوم الإنسانية"></option>
+                    <option value="كلية الأعمال"></option>
+                    <option value="كلية الفنون والتصميم"></option>
+                </datalist>
             </div>
 
             <button class="btn btn-primary" id="search-btn" onclick="searchName()">
