@@ -229,6 +229,75 @@
             box-shadow: 0 6px 16px rgba(12, 37, 72, 0.35);
         }
 
+        .btn-wa-share {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 13px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 14.5px;
+            font-weight: 700;
+            text-align: center;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+            cursor: pointer;
+        }
+
+        .btn-wa-share:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);
+        }
+
+        .btn-copy-link {
+            background: #f1f5f9;
+            color: var(--navy-dark);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 12px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-copy-link:hover {
+            background: #e2e8f0;
+        }
+
+        .toast-verify {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #107c41;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 10001;
+            transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            pointer-events: none;
+            opacity: 0;
+        }
+        .toast-verify.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
         .btn-close-modal {
             background: transparent;
             color: var(--text-muted);
@@ -309,13 +378,40 @@
     <!-- Actions -->
     <div class="card-footer">
         <a href="{{ download_url }}" class="btn-full-cert">
-            📜 عرض الشهادة الأصلية الكاملة
+            📜 عرض وتحميل الشهادة الأصلية الكاملة
         </a>
+        <button onclick="shareOnWhatsApp()" class="btn-wa-share">
+            💬 مشاركة التوثيق على واتساب
+        </button>
+        <button onclick="copyVerifyLink()" class="btn-copy-link">
+            📋 نسخ رابط التوثيق
+        </button>
         <a href="/" class="btn-close-modal">
             إغلاق نافذة التحقق
         </a>
     </div>
 </div>
+
+<div id="toast-verify" class="toast-verify"></div>
+
+<script>
+    function shareOnWhatsApp() {
+        const text = `🎓 شهادة مشاركة معتمدة ومسجلة رسمياً بسجلات جامعة كفر الشيخ الأهلية ✨\n\n📌 اسم المشارك: {{ student_name }}\n🏛️ الكلية: {{ faculty }}\n📜 الفعالية: {{ conf_name }}\n🔒 رقم الوثيقة: {{ cert_id }}\n\n🔍 رابط التحقق الرسمي:\n${window.location.href}`;
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
+    }
+
+    function copyVerifyLink() {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            const toast = document.getElementById('toast-verify');
+            toast.textContent = '✅ تم نسخ رابط التوثيق بنجاح!';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }).catch(() => {
+            prompt('انسخ الرابط:', window.location.href);
+        });
+    }
+</script>
 
 </body>
 </html>

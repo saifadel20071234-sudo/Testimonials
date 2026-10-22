@@ -8,7 +8,7 @@ import re
 import json
 import hashlib
 from io import BytesIO
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, session
 import openpyxl
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
@@ -17,8 +17,10 @@ from bidi.algorithm import get_display
 from fuzzywuzzy import fuzz, process
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'knu-certificates-secret-key-2026')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max upload
 
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'knu2026admin')
 BASE_DIR = os.path.dirname(__file__)
 
 # ─────────────────────────────────────────
@@ -194,7 +196,12 @@ def normalize_arabic(text: str) -> str:
 # ─────────────────────────────────────────
 #  Excel Loading & Fuzzy Search
 # ─────────────────────────────────────────
-def load_students(conference_id: str) -> dict:
+_STUDENTS_CACHE = {}
+
+def load_students(conference_id: str, force_reload: bool = False) -> dict:
+    if not force_reload and conference_id in _STUDENTS_CACHE:
+        return _STUDENTS_CACHE[conference_id]
+
     students = {}
     conf = CONFERENCES.get(conference_id)
     if not conf:
@@ -229,6 +236,7 @@ def load_students(conference_id: str) -> dict:
     except Exception as e:
         print(f"❌ خطأ في قراءة الإكسيل: {e}")
 
+    _STUDENTS_CACHE[conference_id] = students
     return students
 
 
@@ -467,6 +475,10 @@ def preview():
 
     try:
         img = render_certificate_image(name, faculty, conference_id)
+        cert_id = generate_cert_id(name, conference_id)
+        verify_url = f"https://testimonials-virid.vercel.app/verify/{cert_id}"
+        conf = CONFERENCES.get(conference_id, CONFERENCES['ai_emergency'])
+        conf_name = conf['name']
 
         preview_img = img.copy()
         preview_img.thumbnail((1200, 850), Image.LANCZOS)
@@ -477,7 +489,13 @@ def preview():
 
         import base64
         img_b64 = base64.b64encode(buf.read()).decode('utf-8')
-        return jsonify({'status': 'ok', 'image': f'data:image/jpeg;base64,{img_b64}'})
+        return jsonify({
+            'status': 'ok',
+            'image': f'data:image/jpeg;base64,{img_b64}',
+            'cert_id': cert_id,
+            'verify_url': verify_url,
+            'conf_name': conf_name
+        })
 
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
@@ -584,6 +602,148 @@ def download_by_cert(cert_id):
         as_attachment=True,
         download_name=filename
     )
+
+
+# ─────────────────────────────────────────
+#  Admin Dashboard Routes — لوحة التحكم للمسؤول
+# ─────────────────────────────────────────
+@app.route('/admin', methods=['GET', 'POST'])
+def admin_dashboard():
+    error = None
+    if request.method == 'POST':
+        pwd = request.form.get('password', '').strip()
+        if pwd == ADMIN_PASSWORD:
+            session['is_admin'] = True
+            return redirect(url_for('admin_dashboard'))
+        else:
+            error = 'كلمة المرور غير صحيحة، يرجى المحاولة مجدداً.'
+
+    if not session.get('is_admin'):
+        return render_template('admin.html', is_authenticated=False, error=error)
+
+    # إحصائيات وقوائم الطلاب
+    students_ai = load_students('ai_emergency')
+    students_acc = load_students('accounting')
+
+    registry_count = 0
+    if os.path.exists(REGISTRY_FILE):
+        try:
+            with open(REGISTRY_FILE, 'r', encoding='utf-8') as f:
+                registry_count = len(json.load(f))
+        except Exception:
+            pass
+
+    return render_template(
+        'admin.html',
+        is_authenticated=True,
+        conferences=CONFERENCES,
+        count_ai=len(students_ai),
+        count_acc=len(students_acc),
+        total_students=len(students_ai) + len(students_acc),
+        registry_count=registry_count,
+        students_ai=list(students_ai.values()),
+        students_acc=list(students_acc.values())
+    )
+
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('is_admin', None)
+    return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/api/admin/add_student', methods=['POST'])
+def admin_add_student():
+    if not session.get('is_admin'):
+        return jsonify({'status': 'error', 'message': 'غير مصرح لك بالوصول'}), 401
+
+    data = request.get_json(silent=True) or {}
+    name = data.get('name', '').strip()
+    conf_id = data.get('conference', '').strip()
+
+    if not name or conf_id not in CONFERENCES:
+        return jsonify({'status': 'error', 'message': 'يرجى إدخال اسم الطالب واختيار المؤتمر'}), 400
+
+    # حفظ في ملف الإكسيل إن أمكن
+    try:
+        conf = CONFERENCES[conf_id]
+        excel_path = conf['excel']
+        if os.path.exists(excel_path):
+            wb = openpyxl.load_workbook(excel_path)
+            ws = wb.active
+            ws.append([name])
+            wb.save(excel_path)
+            wb.close()
+    except Exception as e:
+        print(f"Notice: couldn't write to disk excel (normal on serverless): {e}")
+
+    # تحديث الكاش بالذاكرة
+    normalized = normalize_arabic(name)
+    students = load_students(conf_id)
+    students[normalized] = name
+    _STUDENTS_CACHE[conf_id] = students
+
+    # تسجيل شهادة الطالب بالـ registry
+    cert_id = generate_cert_id(name, conf_id)
+    save_certificate_record(cert_id, name, 'جامعة كفر الشيخ الأهلية', conf_id)
+
+    return jsonify({
+        'status': 'ok',
+        'message': f'تمت إضافة الطالب «{name}» بنجاح!',
+        'cert_id': cert_id
+    })
+
+
+@app.route('/api/admin/upload_excel', methods=['POST'])
+def admin_upload_excel():
+    if not session.get('is_admin'):
+        return jsonify({'status': 'error', 'message': 'غير مصرح لك بالوصول'}), 401
+
+    conf_id = request.form.get('conference', '').strip()
+    file = request.files.get('file')
+
+    if not file or not file.filename.endswith(('.xlsx', '.xls')):
+        return jsonify({'status': 'error', 'message': 'يرجى اختيار ملف Excel صالح (.xlsx)'}), 400
+
+    if conf_id not in CONFERENCES:
+        return jsonify({'status': 'error', 'message': 'مؤتمر غير معروف'}), 400
+
+    try:
+        wb = openpyxl.load_workbook(file, read_only=True)
+        ws = wb.active
+        new_students = {}
+        first_row = True
+        for row in ws.iter_rows():
+            cell = row[0]
+            if cell.value is None:
+                continue
+            name = str(cell.value).strip()
+            if first_row and ('اسم' in name or 'الاسم' in name or 'name' in name.lower()):
+                first_row = False
+                continue
+            first_row = False
+            if name:
+                normalized = normalize_arabic(name)
+                new_students[normalized] = name
+        wb.close()
+
+        # تحديث الكاش
+        _STUDENTS_CACHE[conf_id] = new_students
+
+        # محاولة الحفظ على القرص (إذا كان متاحاً)
+        try:
+            excel_path = CONFERENCES[conf_id]['excel']
+            file.seek(0)
+            file.save(excel_path)
+        except Exception:
+            pass
+
+        return jsonify({
+            'status': 'ok',
+            'message': f'تم تحديث قائمة الطلاب بنجاح! تم استيراد {len(new_students)} طالب.'
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'خطأ أثناء قراءة الملف: {str(e)}'}), 500
 
 
 if __name__ == '__main__':

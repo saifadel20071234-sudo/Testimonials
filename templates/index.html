@@ -574,6 +574,174 @@
             display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
         }
 
+        /* ── WhatsApp Button ── */
+        .btn-whatsapp {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 700;
+        }
+        .btn-whatsapp:hover {
+            background: linear-gradient(135deg, #22bf5b 0%, #0e7266 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+            color: white !important;
+        }
+
+        /* ── Zoom Hint on Preview ── */
+        .zoom-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--gold);
+            background: rgba(184, 134, 11, 0.08);
+            border: 1px dashed var(--gold-light);
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 14px;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .zoom-hint:hover {
+            background: var(--gold-pale);
+            transform: scale(1.02);
+        }
+
+        .cert-preview-container img {
+            cursor: zoom-in;
+            transition: transform 0.2s;
+        }
+        .cert-preview-container img:hover {
+            opacity: 0.97;
+        }
+
+        /* ── Fullscreen Lightbox Modal ── */
+        .cert-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(12, 37, 72, 0.88);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.25s ease;
+        }
+        .cert-modal-overlay.active { display: flex; }
+        .cert-modal-content {
+            position: relative;
+            max-width: 95vw;
+            max-height: 90vh;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .cert-modal-content img {
+            max-width: 100%;
+            max-height: 82vh;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+        .modal-close {
+            position: absolute;
+            top: -16px;
+            left: -16px;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #dc2626;
+            color: white;
+            border: 2px solid white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .modal-close:hover { transform: scale(1.1); }
+        .modal-hint {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 8px;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        /* ── Toast Notification ── */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #107c41;
+            color: white;
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 10001;
+            transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            pointer-events: none;
+            opacity: 0;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* ── Features Showcase on Home Screen ── */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 36px;
+            padding-top: 30px;
+            border-top: 1px dashed rgba(184, 134, 11, 0.25);
+            text-align: right;
+        }
+        @media (max-width: 680px) {
+            .features-grid { grid-template-columns: 1fr; }
+        }
+        .feature-item {
+            background: var(--cream);
+            border: 1px solid #e5d9b5;
+            border-radius: 12px;
+            padding: 18px 16px;
+            transition: transform 0.2s;
+        }
+        .feature-item:hover { transform: translateY(-3px); border-color: var(--gold); }
+        .feature-item .feat-icon {
+            font-size: 28px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .feature-item .feat-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+        .feature-item .feat-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
         /* ══════════════════════════════════════
            SCREEN: Thank You / Done
         ══════════════════════════════════════ */
@@ -723,6 +891,25 @@
                 </div>
 
             </div>
+
+            <!-- المميزات والضمانات الأكاديمية -->
+            <div class="features-grid">
+                <div class="feature-item">
+                    <span class="feat-icon">⚡</span>
+                    <div class="feat-title">إصدار وتوثيق فوري</div>
+                    <div class="feat-desc">توليد شهادة PDF فائقة الجودة بدقة 300 DPI جاهزة للطباعة فوراً</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feat-icon">🛡️</span>
+                    <div class="feat-title">رمز استجابة سريعة (QR)</div>
+                    <div class="feat-desc">كود توثيق فريد مسجل بسجلات الجامعة للتحقق الذكي بالكاميرا</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feat-icon">🏛️</span>
+                    <div class="feat-title">مطابقة ذكية لـ 13 كلية</div>
+                    <div class="feat-desc">تعرف آلي فوري على كليتك وصياغة أكاديمية موثقة ومعتمدة</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -814,7 +1001,12 @@
                     <div class="spin-gold"></div>
                     <p>جاري تحضير شهادتك...</p>
                 </div>
-                <img id="cert-preview-img" src="" alt="معاينة الشهادة" style="display:none;" />
+                <img id="cert-preview-img" src="" alt="معاينة الشهادة" onclick="openZoomModal()" title="انقر لتكبير الشهادة وفحص التفاصيل" style="display:none;" />
+            </div>
+
+            <!-- زر تلميح التكبير -->
+            <div>
+                <span class="zoom-hint" onclick="openZoomModal()">🔍 اضغط على الشهادة لتكبيرها وفحص التفاصيل</span>
             </div>
 
             <div class="preview-actions">
@@ -822,6 +1014,15 @@
                     <span id="dl-btn-text">⬇️ تحميل الشهادة PDF</span>
                     <span id="dl-spinner" style="display:none;"><span class="spinner"></span></span>
                 </button>
+                <button class="btn btn-whatsapp" id="share-wa-btn" onclick="shareOnWhatsApp()">
+                    <span>💬 مشاركة على واتساب</span>
+                </button>
+                <button class="btn btn-outline" id="copy-link-btn" onclick="copyVerifyLink()">
+                    <span>📋 نسخ رابط التوثيق</span>
+                </button>
+                <a class="btn btn-outline" id="view-verify-btn" target="_blank" href="#" style="text-decoration:none;">
+                    <span>🛡️ صفحة التحقق الذكي</span>
+                </a>
                 <button class="btn btn-outline" onclick="backToSearch()">
                     🔄 العودة للبحث
                 </button>
@@ -833,15 +1034,27 @@
 
     <!-- ── SCREEN 3: Done ── -->
     <div class="screen" id="screen-done">
-        <div class="card">
+        <div class="card" style="max-width:650px;">
             <span class="done-icon">🎊</span>
             <h2>تم تحميل شهادتك بنجاح!</h2>
             <p class="subtitle" id="done-message">
                 مبروك! جاهزة للطباعة في أي وقت.<br>
                 نتمنى لك التوفيق والنجاح دائماً.
             </p>
-            <br>
-            <button class="btn btn-primary" style="width: auto; padding: 14px 40px;" onclick="goHome()">
+
+            <div class="preview-actions" style="margin: 24px 0 16px;">
+                <button class="btn btn-whatsapp" onclick="shareOnWhatsApp()">
+                    <span>💬 مشاركة الإنجاز على واتساب</span>
+                </button>
+                <button class="btn btn-outline" onclick="copyVerifyLink()">
+                    <span>📋 نسخ رابط التوثيق</span>
+                </button>
+                <a class="btn btn-outline" id="view-verify-btn-done" target="_blank" href="#" style="text-decoration:none;">
+                    <span>🛡️ صفحة التحقق</span>
+                </a>
+            </div>
+
+            <button class="btn btn-primary" style="width: auto; padding: 12px 36px;" onclick="goHome()">
                 🏠 العودة للصفحة الرئيسية
             </button>
         </div>
@@ -849,10 +1062,22 @@
 
 </main>
 
+<!-- ═══ MODAL ZOOM LIGHTBOX ═══ -->
+<div id="cert-modal" class="cert-modal-overlay" onclick="closeZoomModal()">
+    <div class="cert-modal-content" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeZoomModal()" title="إغلاق">✕</button>
+        <img id="cert-modal-img" src="" alt="شهادة مكبرة">
+        <div class="modal-hint">🔍 دقة عالية مطابقة للشهادة الرسمية الأصلية ومعتمدة بختم الجامعة</div>
+    </div>
+</div>
+
+<!-- ═══ TOAST NOTIFICATION ═══ -->
+<div id="toast" class="toast"></div>
+
 <!-- ═══ FOOTER ═══ -->
 <footer>
     <p class="footer-conf" id="footer-conf-name">منصة إصدار الشهادات الإلكترونية — جامعة كفر الشيخ الأهلية</p>
-    <p class="footer-copy">جميع الحقوق محفوظة &copy; 2026 &nbsp;|&nbsp; <span class="footer-dev">Ziad Asaad &amp; Saif el eslam</span></p>
+    <p class="footer-copy">جميع الحقوق محفوظة &copy; 2026 &nbsp;|&nbsp; <span class="footer-dev">Ziad Asaad &amp; Saif el eslam</span> &nbsp;|&nbsp; <a href="/admin" style="color:var(--text-muted);text-decoration:none;font-size:12px;opacity:0.8;" title="لوحة تحكم المسؤول">🔐 بوابة الإدارة</a></p>
 </footer>
 
 <!-- ═══ CONFETTI ═══ -->
@@ -865,6 +1090,9 @@
     let confirmedFaculty  = '';
     let currentConference = '';  // 'ai_emergency' | 'accounting'
     let currentConfName   = '';  // اسم المؤتمر بالعربي
+    let currentCertId     = '';
+    let currentVerifyUrl  = '';
+    let currentPreviewImg = '';
 
     // ── Helpers ──
     function showScreen(id) {
@@ -1004,16 +1232,73 @@
             const data = await res.json();
 
             if (data.status === 'ok') {
+                currentCertId     = data.cert_id || '';
+                currentVerifyUrl  = data.verify_url || `https://testimonials-virid.vercel.app/verify/${currentCertId}`;
+                currentPreviewImg = data.image;
+
                 const img = document.getElementById('cert-preview-img');
                 img.src = data.image;
                 img.style.display = 'block';
                 document.getElementById('cert-loading').style.display = 'none';
+
+                // تحديث روابط صفحة التحقق
+                const vBtn = document.getElementById('view-verify-btn');
+                if (vBtn) vBtn.href = currentVerifyUrl;
+                const vBtnDone = document.getElementById('view-verify-btn-done');
+                if (vBtnDone) vBtnDone.href = currentVerifyUrl;
             } else {
                 document.getElementById('cert-loading').innerHTML = '<p style="color:#dc2626;">⚠️ تعذّر تحميل المعاينة</p>';
             }
         } catch {
             document.getElementById('cert-loading').innerHTML = '<p style="color:#dc2626;">⚠️ خطأ في الاتصال</p>';
         }
+    }
+
+    // ── WhatsApp Share ──
+    function shareOnWhatsApp() {
+        if (!currentVerifyUrl) return;
+        const confTitle = currentConfName || 'المؤتمر الطلابي السنوي';
+        const text = `🎓 تم بحمد الله استخراج وتوثيق شهادة مشاركتي الرسمية في:\n«${confTitle}»\nجامعة كفر الشيخ الأهلية ✨\n\n📌 اسم المشارك: ${confirmedName}\n🔒 رقم التوثيق المسجل: ${currentCertId}\n\n🔍 للتحقق الفوري من صحة واعتماد الشهادة:\n${currentVerifyUrl}`;
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
+    }
+
+    // ── Copy Link ──
+    function copyVerifyLink() {
+        if (!currentVerifyUrl) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(currentVerifyUrl).then(() => {
+                showToast('✅ تم نسخ رابط توثيق الشهادة بنجاح!');
+            }).catch(() => {
+                prompt('انسخ رابط التوثيق التالي:', currentVerifyUrl);
+            });
+        } else {
+            prompt('انسخ رابط التوثيق التالي:', currentVerifyUrl);
+        }
+    }
+
+    // ── Zoom Modal ──
+    function openZoomModal() {
+        if (!currentPreviewImg) return;
+        const modal = document.getElementById('cert-modal');
+        const modalImg = document.getElementById('cert-modal-img');
+        modalImg.src = currentPreviewImg;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeZoomModal() {
+        const modal = document.getElementById('cert-modal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // ── Toast Notification ──
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3500);
     }
 
     // ── Download ──
