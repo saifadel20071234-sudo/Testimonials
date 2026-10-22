@@ -301,23 +301,28 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
     # 6. الخاتمة
     draw_centered('متمنين له دوام التوفيق والتميز والنجاح المستمر', 980, f_wish, C_GRAY, max_w=2000)
 
-    # 7. توليد رمز الاستجابة السريعة (QR Code) الحقيقي
-    # الرابط يفتح صفحة التوثيق الإلكتروني الذكي للشهادة
-    qr_url = f"https://testimonials-virid.vercel.app/verify/{cert_id}?name={student_name}&fac={fac_text}&conf={conference_id}"
-    qr = qrcode.QRCode(box_size=4, border=1)
+    # 7. توليد رمز الاستجابة السريعة (QR Code) بدقة عالية ومسافات متناسقة
+    qr_url = f"https://testimonials-virid.vercel.app/verify/{cert_id}"
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=4,
+        border=1
+    )
     qr.add_data(qr_url)
     qr.make(fit=True)
     qr_img = qr.make_image(fill_color='#0c2548', back_color='white').convert('RGB')
+    qr_img = qr_img.resize((150, 150), Image.NEAREST)
     qr_w, qr_h = qr_img.size
 
     qr_x = w // 2 - qr_w // 2
-    qr_y = 1355
+    qr_y = 1315
     img.paste(qr_img, (qr_x, qr_y))
 
-    # 8. التوثيق أسفل الباركود
-    draw_centered('امسح الباركود للتحقق من صحة الشهادة', 1530, f_serial, C_NAVY_DARK)
-    draw_centered(f'رقم التوثيق: {cert_id}', 1560, f_serial, C_BLUE)
-    draw_centered('✓ شهادة رسمية معتمدة ومسجلة بسجلات الجامعة', 1590, f_serial, (22, 130, 60))
+    # 8. بيانات التوثيق أسفل الباركود بتباعد مريح وبدون أي تداخل
+    draw_centered('امسح الباركود للتحقق من صحة الشهادة', 1492, f_serial, C_NAVY_DARK)
+    draw_centered(f'رقم التوثيق: {cert_id}', 1522, f_serial, C_BLUE)
+    draw_centered('• شهادة رسمية معتمدة ومسجلة بسجلات الجامعة •', 1552, f_serial, (22, 130, 60))
 
     return img
 

@@ -6,7 +6,137 @@
   },
   "KNU-HONOR-2026-111": {
     "student_name": "احمد محمد علي",
-    "faculty": "كلية التجارة",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "accounting"
+  },
+  "KNU-HONOR-2026-462": {
+    "student_name": "أحمد محمد علي",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-999": {
+    "student_name": "فاطمة عبدالرحمن",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-494": {
+    "student_name": "محمد إبراهيم حسن",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-302": {
+    "student_name": "نور الدين عمر",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-131": {
+    "student_name": "سارة أحمد خالد",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-748": {
+    "student_name": "عمر عبدالله محمود",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-994": {
+    "student_name": "إيمان يوسف سعيد",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-946": {
+    "student_name": "علي حسين الشريف",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-558": {
+    "student_name": "مريم إسماعيل فاروق",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-568": {
+    "student_name": "خالد عبدالعزيز نور",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-562": {
+    "student_name": "هبة الله محمد رشاد",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-980": {
+    "student_name": "عبدالرحمن طارق فتحي",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-754": {
+    "student_name": "محمد سعيد الانصاري",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-493": {
+    "student_name": "نورا عبد الله الحسن",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-824": {
+    "student_name": "سلمى احمد الشريف",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "ai_emergency"
+  },
+  "KNU-HONOR-2026-237": {
+    "student_name": "فاطمة ابراهيم حسن",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "accounting"
+  },
+  "KNU-HONOR-2026-392": {
+    "student_name": "محمد عبد الله السيد",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "accounting"
+  },
+  "KNU-HONOR-2026-842": {
+    "student_name": "نورا خالد محمود",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "accounting"
+  },
+  "KNU-HONOR-2026-726": {
+    "student_name": "يوسف احمد ابراهيم",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "accounting"
+  },
+  "KNU-HONOR-2026-852": {
+    "student_name": "سارة علي محمد",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "accounting"
+  },
+  "KNU-HONOR-2026-227": {
+    "student_name": "عمر حسن عبد الرحمن",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "accounting"
+  },
+  "KNU-HONOR-2026-908": {
+    "student_name": "منى سيد احمد",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "accounting"
+  },
+  "KNU-HONOR-2026-575": {
+    "student_name": "خالد محمود ابراهيم",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "accounting"
+  },
+  "KNU-HONOR-2026-262": {
+    "student_name": "هدى عبد العزيز محمد",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "accounting"
+  },
+  "KNU-HONOR-2026-577": {
+    "student_name": "طارق ابراهيم مصطفى",
+    "faculty": "جامعة كفر الشيخ الأهلية",
+    "conference_id": "accounting"
+  },
+  "KNU-HONOR-2026-629": {
+    "student_name": "ريم خالد السيد",
+    "faculty": "جامعة كفر الشيخ الأهلية",
     "conference_id": "accounting"
   }
 }
