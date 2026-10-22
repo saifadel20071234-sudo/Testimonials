@@ -214,10 +214,10 @@ def render_certificate_image(student_name: str, conference_id: str) -> Image.Ima
 
     draw = ImageDraw.Draw(img)
     img_w, img_h = img.size
+    scale = img_w / 1000.0
 
     # ── 1. اسم الطالب ──
-    # الطالب / موجودة عند X ~ 700..800، والاسم في المساحة المخصصة (X: 100..680)
-    name_font_size = 31
+    name_font_size = max(24, int(32 * scale))
     f_name = _load_arabic_font(name_font_size, bold=True)
     reshaped_name = arabic_reshaper.reshape(student_name)
     bidi_name     = get_display(reshaped_name)
@@ -226,28 +226,25 @@ def render_certificate_image(student_name: str, conference_id: str) -> Image.Ima
     nw = bbox_name[2] - bbox_name[0]
     nh = bbox_name[3] - bbox_name[1]
 
-    # ضبط الحجم تلقائياً لو الاسم طويل
-    max_name_width = 560
-    while nw > max_name_width and name_font_size > 18:
+    max_name_width = int(580 * scale)
+    while nw > max_name_width and name_font_size > int(18 * scale):
         name_font_size -= 2
         f_name = _load_arabic_font(name_font_size, bold=True)
         bbox_name = draw.textbbox((0, 0), bidi_name, font=f_name)
         nw = bbox_name[2] - bbox_name[0]
         nh = bbox_name[3] - bbox_name[1]
 
-    # رسم اسم الطالب في مركزه المخصص (X: 390، Y: 361)
-    name_center_x = int(img_w * 0.398)
+    name_center_x = int(img_w * 0.40)
     name_center_y = int(img_h * 0.547)
     draw.text(
         (name_center_x - nw // 2, name_center_y - nh // 2),
         bidi_name,
         font=f_name,
-        fill=(12, 37, 72)  # كحلي نيلي أنيق
+        fill=(12, 37, 72)
     )
 
     # ── 2. اسم المؤتمر ──
-    # أسفل عبارة «وذلك لمشاركته في تنظيم فعاليات»، في منتصف الصفحة أفقياً
-    conf_font_size = 25
+    conf_font_size = max(20, int(25 * scale))
     f_conf = _load_arabic_font(conf_font_size, bold=True)
     reshaped_conf = arabic_reshaper.reshape(conf_title)
     bidi_conf     = get_display(reshaped_conf)
@@ -256,8 +253,8 @@ def render_certificate_image(student_name: str, conference_id: str) -> Image.Ima
     cw = bbox_conf[2] - bbox_conf[0]
     ch = bbox_conf[3] - bbox_conf[1]
 
-    max_conf_width = 800
-    while cw > max_conf_width and conf_font_size > 16:
+    max_conf_width = int(820 * scale)
+    while cw > max_conf_width and conf_font_size > int(16 * scale):
         conf_font_size -= 2
         f_conf = _load_arabic_font(conf_font_size, bold=True)
         bbox_conf = draw.textbbox((0, 0), bidi_conf, font=f_conf)
@@ -270,7 +267,7 @@ def render_certificate_image(student_name: str, conference_id: str) -> Image.Ima
         (conf_center_x - cw // 2, conf_center_y - ch // 2),
         bidi_conf,
         font=f_conf,
-        fill=(16, 53, 101)  # كحلي رعاية الطلاب
+        fill=(16, 53, 101)
     )
 
     return img
