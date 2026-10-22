@@ -756,6 +756,15 @@
                 />
             </div>
 
+            <div class="input-group" style="margin-top: -6px;">
+                <input
+                    type="text"
+                    id="faculty-input"
+                    placeholder="اكتب اسم كليتك (مثال: كلية الحاسبات والمعلومات)..."
+                    autocomplete="off"
+                />
+            </div>
+
             <button class="btn btn-primary" id="search-btn" onclick="searchName()">
                 <span id="search-btn-text">🔍 ابحث عن شهادتي</span>
                 <span id="search-spinner" style="display:none;"><span class="spinner"></span></span>
@@ -837,6 +846,7 @@
 <script>
     // ── State ──
     let confirmedName     = '';
+    let confirmedFaculty  = '';
     let currentConference = '';  // 'ai_emergency' | 'accounting'
     let currentConfName   = '';  // اسم المؤتمر بالعربي
 
@@ -875,6 +885,7 @@
         // الانتقال لشاشة البحث
         showScreen('screen-search');
         document.getElementById('name-input').value = '';
+        document.getElementById('faculty-input').value = '';
         hideAlert('error-msg');
         document.getElementById('suggestions-box').style.display = 'none';
         setTimeout(() => document.getElementById('name-input').focus(), 300);
@@ -883,6 +894,7 @@
     // ── Go Home ──
     function goHome() {
         confirmedName = '';
+        confirmedFaculty = '';
         currentConference = '';
         currentConfName   = '';
         document.getElementById('header-conf-name').textContent = 'منصة إصدار الشهادات الإلكترونية';
@@ -893,6 +905,7 @@
     // ── Clear search fields only ──
     function clearSearch() {
         document.getElementById('name-input').value = '';
+        document.getElementById('faculty-input').value = '';
         hideAlert('error-msg');
         document.getElementById('suggestions-box').style.display = 'none';
         document.getElementById('name-input').focus();
@@ -905,9 +918,13 @@
 
     // ── Search ──
     async function searchName() {
-        const name = document.getElementById('name-input').value.trim();
+        const name    = document.getElementById('name-input').value.trim();
+        const faculty = document.getElementById('faculty-input').value.trim();
+
         if (!name) { showAlert('error-msg', '⚠️ يرجى كتابة اسمك أولاً'); return; }
         if (!currentConference) { goHome(); return; }
+
+        confirmedFaculty = faculty;
 
         hideAlert('error-msg');
         document.getElementById('suggestions-box').style.display = 'none';
@@ -923,7 +940,7 @@
 
             if (data.status === 'found') {
                 confirmedName = data.original_name;
-                goToPreview(confirmedName);
+                goToPreview(confirmedName, confirmedFaculty);
 
             } else if (data.status === 'confirm') {
                 const list = document.getElementById('suggestions-list');
@@ -932,7 +949,10 @@
                     const btn = document.createElement('button');
                     btn.className = 'suggestion-btn';
                     btn.innerHTML = `✅ ${s.name} <small style="color:#7a6035;">(تطابق ${s.score}%)</small>`;
-                    btn.onclick = () => { confirmedName = s.name; goToPreview(s.name); };
+                    btn.onclick = () => { 
+                        confirmedName = s.name; 
+                        goToPreview(s.name, confirmedFaculty); 
+                    };
                     list.appendChild(btn);
                 });
                 document.getElementById('suggestions-box').style.display = 'block';
@@ -948,7 +968,7 @@
     }
 
     // ── Go To Preview ──
-    async function goToPreview(name) {
+    async function goToPreview(name, faculty) {
         showScreen('screen-preview');
         document.getElementById('preview-name-badge').textContent = name;
         document.getElementById('cert-preview-img').style.display = 'none';
@@ -959,7 +979,11 @@
             const res  = await fetch('/preview', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, conference: currentConference })
+                body: JSON.stringify({ 
+                    name: name, 
+                    faculty: faculty || confirmedFaculty,
+                    conference: currentConference 
+                })
             });
             const data = await res.json();
 
@@ -990,7 +1014,11 @@
             const res = await fetch('/download', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: confirmedName, conference: currentConference })
+                body: JSON.stringify({ 
+                    name: confirmedName, 
+                    faculty: confirmedFaculty,
+                    conference: currentConference 
+                })
             });
 
             if (!res.ok) {
@@ -1014,7 +1042,7 @@
             setTimeout(() => {
                 showScreen('screen-done');
                 document.getElementById('done-message').innerHTML =
-                    `مبروك <strong>${confirmedName}</strong>!<br>شهادتك جاهزة للطباعة. نتمنى لك التوفيق والنجاح دائماً 🌟`;
+                    `مبروك <strong>${confirmedName}</strong>!<br>شهادتك جاهزة للطباعة معتمدة وموثقة برمز الاستجابة السريعة (QR). نتمنى لك التوفيق والنجاح دائماً 🌟`;
                 launchConfetti();
             }, 500);
 
@@ -1049,6 +1077,9 @@
 
     // ── Enter Key ──
     document.getElementById('name-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') searchName();
+    });
+    document.getElementById('faculty-input').addEventListener('keydown', e => {
         if (e.key === 'Enter') searchName();
     });
 </script>

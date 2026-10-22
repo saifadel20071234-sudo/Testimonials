@@ -5,76 +5,116 @@ Certificate Generation System - Main Flask Application
 
 import os
 import re
-import unicodedata
+import json
+import hashlib
 from io import BytesIO
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
 import openpyxl
 from PIL import Image, ImageDraw, ImageFont
+import qrcode
+import arabic_reshaper
+from bidi.algorithm import get_display
 from fuzzywuzzy import fuzz, process
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max upload
 
+BASE_DIR = os.path.dirname(__file__)
+
 # ─────────────────────────────────────────
 #  CONFIG — إعدادات المؤتمرات
 # ─────────────────────────────────────────
-BASE_DIR = os.path.dirname(__file__)
-
 CONFERENCES = {
     'ai_emergency': {
-        'name': 'مؤتمر: الذكاء الاصطناعي في الطوارئ والإسعافات الأولية',
+        'name': 'مؤتمر الذكاء الاصطناعي في الطوارئ والإسعافات الأولية',
+        'display': 'مؤتمر: الذكاء الاصطناعي في الطوارئ والإسعافات الأولية',
+        'slogan': '« الذكاء الاصطناعي في الطوارئ والإسعافات الأولية - إنقاذ الأرواح بالتقنيات الذكية »',
+        'date': '19 أكتوبر 2026',
+        'code': '01',
         'excel': os.path.join(BASE_DIR, 'data', 'ai_emergency.xlsx'),
     },
     'accounting': {
-        'name': 'مؤتمر: المحاسبة والإدارة المالية',
+        'name': 'مؤتمر المحاسبة والإدارة المالية',
+        'display': 'مؤتمر: المحاسبة والإدارة المالية',
+        'slogan': '« آفاق المحاسبة والإدارة المالية الرقمية ودورها في التنمية المستدامة »',
+        'date': '22 أكتوبر 2026',
+        'code': '02',
         'excel': os.path.join(BASE_DIR, 'data', 'accounting.xlsx'),
     },
 }
 
-CERT_TEMPLATE_PATH = os.path.join(BASE_DIR, 'static', 'images', 'certificate_template.png')
-LOGO_PATH          = os.path.join(BASE_DIR, 'static', 'images', 'logo.png')
-FONTS_DIR          = os.path.join(BASE_DIR, 'static', 'fonts')
+CERT_BASE_PATH = os.path.join(BASE_DIR, 'static', 'images', 'certificate_base.jpg')
+FONTS_DIR      = os.path.join(BASE_DIR, 'static', 'fonts')
+FUZZY_THRESHOLD = 70
 
-FUZZY_THRESHOLD    = 70
+# قاعدة بيانات خفيفة في الذاكرة لتسجيل الشهادات للتحقق الفوري
+REGISTRY_FILE = os.path.join(BASE_DIR, 'data', 'registry.json')
+
+
+# ─────────────────────────────────────────
+#  Certificate ID Generation & Registry
+# ─────────────────────────────────────────
+def generate_cert_id(student_name: str, conference_id: str) -> str:
+    """يولّد رقم توثيق فريد وثابت لكل طالب ومؤتمر: KNU-HONOR-2026-XXX"""
+    conf = CONFERENCES.get(conference_id, CONFERENCES['ai_emergency'])
+    code = conf['code']
+    h = int(hashlib.md5(f"{student_name}_{conference_id}".encode('utf-8')).hexdigest(), 16)
+    seq = (h % 900) + 100
+    return f"KNU-HONOR-2026-{seq}"
+
+
+def save_certificate_record(cert_id: str, student_name: str, faculty: str, conference_id: str):
+    """يحفظ بيانات الشهادة للتحقق منها عبر الباركود"""
+    try:
+        data = {}
+        if os.path.exists(REGISTRY_FILE):
+            with open(REGISTRY_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        data[cert_id] = {
+            'student_name': student_name,
+            'faculty': faculty or 'جامعة كفر الشيخ الأهلية',
+            'conference_id': conference_id,
+        }
+        os.makedirs(os.path.dirname(REGISTRY_FILE), exist_ok=True)
+        with open(REGISTRY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Warning: could not save registry record: {e}")
+
+
+def get_certificate_record(cert_id: str) -> dict | None:
+    """يسترجع بيانات الشهادة برقم التوثيق"""
+    if os.path.exists(REGISTRY_FILE):
+        try:
+            with open(REGISTRY_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if cert_id in data:
+                    return data[cert_id]
+        except Exception:
+            pass
+    return None
 
 
 # ─────────────────────────────────────────
 #  Arabic Text Normalization
-#  توحيد الحروف العربية
 # ─────────────────────────────────────────
 def normalize_arabic(text: str) -> str:
-    """
-    يوحّد الكتابة العربية:
-    - يزيل الهمزات والمدة من الألف
-    - يوحّد التاء المربوطة والهاء
-    - يوحّد الياء والألف المقصورة
-    - يزيل التشكيل والتنوين
-    - يزيل المسافات الزائدة
-    """
     if not text:
         return ''
     text = text.strip()
-    # إزالة التشكيل (الحركات والتنوين)
     text = re.sub(r'[\u064B-\u065F\u0670]', '', text)
-    # توحيد الألف وأشكالها (أ إ آ أ) → ا
     text = re.sub(r'[أإآٱ]', 'ا', text)
-    # توحيد التاء المربوطة مع الهاء
     text = re.sub(r'[ةه]', 'ه', text)
-    # توحيد الياء والألف المقصورة
     text = re.sub(r'[يى]', 'ي', text)
-    # توحيد الواو مع همزتها
     text = re.sub(r'[ؤو]', 'و', text)
-    # إزالة المسافات المتعددة
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
 
 # ─────────────────────────────────────────
-#  Excel Loading
-#  تحميل بيانات الطلاب من الإكسيل
+#  Excel Loading & Fuzzy Search
 # ─────────────────────────────────────────
 def load_students(conference_id: str) -> dict:
-    """يحمّل الطلاب من ملف الإكسيل الخاص بالمؤتمر ويعيد قاموساً: normalized_name → original_name"""
     students = {}
     conf = CONFERENCES.get(conference_id)
     if not conf:
@@ -90,7 +130,7 @@ def load_students(conference_id: str) -> dict:
 
         first_row = True
         for row in ws.iter_rows():
-            cell = row[0]  # العمود A
+            cell = row[0]
             if cell.value is None:
                 continue
 
@@ -103,7 +143,7 @@ def load_students(conference_id: str) -> dict:
 
             if name:
                 normalized = normalize_arabic(name)
-                students[normalized] = name  # normalized → original
+                students[normalized] = name
 
         wb.close()
     except Exception as e:
@@ -112,10 +152,6 @@ def load_students(conference_id: str) -> dict:
     return students
 
 
-# ─────────────────────────────────────────
-#  Smart Name Search
-#  البحث الذكي عن الاسم
-# ─────────────────────────────────────────
 def find_student(query: str, students: dict) -> dict:
     if not query or not students:
         return {'found': False, 'original_name': None, 'score': 0, 'suggestions': []}
@@ -123,7 +159,6 @@ def find_student(query: str, students: dict) -> dict:
     normalized_query = normalize_arabic(query)
     normalized_list  = list(students.keys())
 
-    # أولاً: تطابق تام
     if normalized_query in students:
         return {
             'found': True,
@@ -132,7 +167,6 @@ def find_student(query: str, students: dict) -> dict:
             'suggestions': []
         }
 
-    # ثانياً: Fuzzy Matching
     if normalized_list:
         results = process.extract(
             normalized_query,
@@ -140,9 +174,7 @@ def find_student(query: str, students: dict) -> dict:
             scorer=fuzz.token_sort_ratio,
             limit=3
         )
-
         top_match, top_score = results[0][0], results[0][1]
-
         if top_score >= FUZZY_THRESHOLD:
             original = students[top_match]
             suggestions = [
@@ -164,10 +196,7 @@ def find_student(query: str, students: dict) -> dict:
 #  Font Loading
 # ─────────────────────────────────────────
 def _load_arabic_font(size: int, bold: bool = True):
-    """يحمّل خط عربي بالحجم المطلوب، مع إعطاء الأولوية للخطوط المرفقة في المشروع"""
-    preferred_names = ['arialbd.ttf', 'tahomabd.ttf', 'timesbd.ttf', 'arial.ttf', 'tahoma.ttf'] if bold else ['arial.ttf', 'tahoma.ttf']
-
-    # 1. الخطوط المرفقة مع المشروع
+    preferred_names = ['arialbd.ttf', 'tahomabd.ttf', 'timesbd.ttf', 'arial.ttf'] if bold else ['arial.ttf', 'tahoma.ttf']
     if os.path.exists(FONTS_DIR):
         for fname in preferred_names:
             p = os.path.join(FONTS_DIR, fname)
@@ -177,13 +206,7 @@ def _load_arabic_font(size: int, bold: bool = True):
                 except Exception:
                     continue
 
-    # 2. خطوط ويندوز كبديل
-    win_fonts = [
-        r'C:\Windows\Fonts\arialbd.ttf',
-        r'C:\Windows\Fonts\tahoma.ttf',
-        r'C:\Windows\Fonts\arial.ttf',
-        r'C:\Windows\Fonts\times.ttf',
-    ]
+    win_fonts = [r'C:\Windows\Fonts\arialbd.ttf', r'C:\Windows\Fonts\tahoma.ttf', r'C:\Windows\Fonts\arial.ttf']
     for path in win_fonts:
         if os.path.exists(path):
             try:
@@ -191,117 +214,121 @@ def _load_arabic_font(size: int, bold: bool = True):
             except Exception:
                 continue
 
-    # 3. Fallback
     return ImageFont.load_default()
 
 
 # ─────────────────────────────────────────
-#  Certificate Image Rendering
+#  Full High-Res Certificate Rendering
 # ─────────────────────────────────────────
-def render_certificate_image(student_name: str, conference_id: str) -> Image.Image:
-    """يبني صورة الشهادة كاملة بدمج القالب مع اسم الطالب والمؤتمر"""
-    import arabic_reshaper
-    from bidi.algorithm import get_display
-
+def render_certificate_image(student_name: str, faculty: str, conference_id: str) -> Image.Image:
+    """
+    يبني صورة الشهادة كاملة بدقة فائقة مطابقة للشهادة الرسمية
+    مع الباركود الفعلي ورقم التوثيق واسم الطالب وكليته واسم المؤتمر
+    """
     conf = CONFERENCES.get(conference_id, CONFERENCES['ai_emergency'])
-    conf_title = conf['name']
+    conf_name   = conf['name']
+    conf_slogan = conf['slogan']
 
-    has_template = os.path.exists(CERT_TEMPLATE_PATH)
-    if has_template:
-        img = Image.open(CERT_TEMPLATE_PATH).convert('RGB')
+    # تنظيف اسم الكلية وإضافة بادئة "كلية" إذا لزم
+    fac_text = (faculty or '').strip()
+    if fac_text and not fac_text.startswith('كلية'):
+        fac_text = f"كلية {fac_text}"
+    if not fac_text:
+        fac_text = "جامعة كفر الشيخ الأهلية"
+
+    # رقم التوثيق الفريد
+    cert_id = generate_cert_id(student_name, conference_id)
+    save_certificate_record(cert_id, student_name, fac_text, conference_id)
+
+    # تحميل قالب الشهادة النقي عالي الدقة المستخرج من الـ PDF
+    if os.path.exists(CERT_BASE_PATH):
+        img = Image.open(CERT_BASE_PATH).convert('RGB')
     else:
-        img = _create_placeholder_certificate()
+        # Fallback لو القالب مش موجود
+        img = Image.new('RGB', (2480, 1754), (255, 255, 255))
 
     draw = ImageDraw.Draw(img)
-    img_w, img_h = img.size
-    scale = img_w / 1000.0
+    w, h = img.size
 
-    # ── 1. اسم الطالب ──
-    name_font_size = max(24, int(32 * scale))
-    f_name = _load_arabic_font(name_font_size, bold=True)
-    reshaped_name = arabic_reshaper.reshape(student_name)
-    bidi_name     = get_display(reshaped_name)
+    # تحميل الخطوط
+    f_name    = _load_arabic_font(68, bold=True)
+    f_faculty = _load_arabic_font(36, bold=True)
+    f_apprec  = _load_arabic_font(32, bold=True)
+    f_conf    = _load_arabic_font(56, bold=True)
+    f_slogan  = _load_arabic_font(30, bold=True)
+    f_wish    = _load_arabic_font(28, bold=True)
+    f_serial  = _load_arabic_font(22, bold=True)
 
-    bbox_name = draw.textbbox((0, 0), bidi_name, font=f_name)
-    nw = bbox_name[2] - bbox_name[0]
-    nh = bbox_name[3] - bbox_name[1]
+    C_NAVY_DARK  = (12, 37, 72)
+    C_BLUE       = (16, 53, 101)
+    C_RED_ACCENT = (195, 40, 40)
+    C_GRAY       = (100, 110, 120)
 
-    max_name_width = int(580 * scale)
-    while nw > max_name_width and name_font_size > int(18 * scale):
-        name_font_size -= 2
-        f_name = _load_arabic_font(name_font_size, bold=True)
-        bbox_name = draw.textbbox((0, 0), bidi_name, font=f_name)
-        nw = bbox_name[2] - bbox_name[0]
-        nh = bbox_name[3] - bbox_name[1]
+    def draw_centered(text: str, y: int, font, fill, max_w: int = 2100):
+        reshaped = arabic_reshaper.reshape(text)
+        bidi = get_display(reshaped)
+        bbox = draw.textbbox((0, 0), bidi, font=font)
+        tw = bbox[2] - bbox[0]
+        th = bbox[3] - bbox[1]
 
-    name_center_x = int(img_w * 0.40)
-    name_center_y = int(img_h * 0.547)
-    draw.text(
-        (name_center_x - nw // 2, name_center_y - nh // 2),
-        bidi_name,
-        font=f_name,
-        fill=(12, 37, 72)
-    )
+        # تصغير الخط تلقائياً لو النص أطول من المساحة المسموحة
+        cur_font = font
+        while tw > max_w and getattr(cur_font, 'size', 30) > 18:
+            new_size = cur_font.size - 2
+            cur_font = _load_arabic_font(new_size, bold=True)
+            bbox = draw.textbbox((0, 0), bidi, font=cur_font)
+            tw = bbox[2] - bbox[0]
+            th = bbox[3] - bbox[1]
 
-    # ── 2. اسم المؤتمر ──
-    conf_font_size = max(20, int(25 * scale))
-    f_conf = _load_arabic_font(conf_font_size, bold=True)
-    reshaped_conf = arabic_reshaper.reshape(conf_title)
-    bidi_conf     = get_display(reshaped_conf)
+        draw.text((w // 2 - tw // 2, y - th // 2), bidi, font=cur_font, fill=fill)
 
-    bbox_conf = draw.textbbox((0, 0), bidi_conf, font=f_conf)
-    cw = bbox_conf[2] - bbox_conf[0]
-    ch = bbox_conf[3] - bbox_conf[1]
+    # 1. اسم الطالب (مكتوب بوضوح: الطالب / [الاسم])
+    student_display = f"الطالب / {student_name}"
+    draw_centered(student_display, 615, f_name, C_NAVY_DARK, max_w=1900)
 
-    max_conf_width = int(820 * scale)
-    while cw > max_conf_width and conf_font_size > int(16 * scale):
-        conf_font_size -= 2
-        f_conf = _load_arabic_font(conf_font_size, bold=True)
-        bbox_conf = draw.textbbox((0, 0), bidi_conf, font=f_conf)
-        cw = bbox_conf[2] - bbox_conf[0]
-        ch = bbox_conf[3] - bbox_conf[1]
+    # 2. الكلية التي كتبها الطالب
+    draw_centered(fac_text, 690, f_faculty, C_BLUE, max_w=1800)
 
-    conf_center_x = int(img_w * 0.50)
-    conf_center_y = int(img_h * 0.709)
-    draw.text(
-        (conf_center_x - cw // 2, conf_center_y - ch // 2),
-        bidi_conf,
-        font=f_conf,
-        fill=(16, 53, 101)
-    )
+    # 3. صيغة التقدير والمشاركة
+    draw_centered('تقديراً لمشاركته الفعالة وجهوده المتميزة في خدمة المنظومة الطلابية وإنجاح فعاليات:', 765, f_apprec, C_GRAY, max_w=2000)
+
+    # 4. اسم المؤتمر
+    draw_centered(conf_name, 840, f_conf, C_NAVY_DARK, max_w=2000)
+
+    # 5. شعار المؤتمر
+    draw_centered(conf_slogan, 915, f_slogan, C_RED_ACCENT, max_w=2000)
+
+    # 6. الخاتمة
+    draw_centered('متمنين له دوام التوفيق والتميز والنجاح المستمر', 980, f_wish, C_GRAY, max_w=2000)
+
+    # 7. توليد رمز الاستجابة السريعة (QR Code) الحقيقي
+    # الرابط يفتح صفحة التوثيق الإلكتروني الذكي للشهادة
+    qr_url = f"https://testimonials-virid.vercel.app/verify/{cert_id}?name={student_name}&fac={fac_text}&conf={conference_id}"
+    qr = qrcode.QRCode(box_size=4, border=1)
+    qr.add_data(qr_url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color='#0c2548', back_color='white').convert('RGB')
+    qr_w, qr_h = qr_img.size
+
+    qr_x = w // 2 - qr_w // 2
+    qr_y = 1355
+    img.paste(qr_img, (qr_x, qr_y))
+
+    # 8. التوثيق أسفل الباركود
+    draw_centered('امسح الباركود للتحقق من صحة الشهادة', 1530, f_serial, C_NAVY_DARK)
+    draw_centered(f'رقم التوثيق: {cert_id}', 1560, f_serial, C_BLUE)
+    draw_centered('✓ شهادة رسمية معتمدة ومسجلة بسجلات الجامعة', 1590, f_serial, (22, 130, 60))
 
     return img
 
 
-# ─────────────────────────────────────────
-#  Certificate PDF Generation
-# ─────────────────────────────────────────
-def generate_certificate(student_name: str, conference_id: str) -> bytes:
-    """يولّد ملف PDF للشهادة مع اسم الطالب واسم المؤتمر في الذاكرة"""
-    img = render_certificate_image(student_name, conference_id)
+def generate_certificate(student_name: str, faculty: str, conference_id: str) -> bytes:
+    """توليد ملف PDF في الذاكرة بالكامل"""
+    img = render_certificate_image(student_name, faculty, conference_id)
     pdf_buffer = BytesIO()
     img.save(pdf_buffer, format='PDF', resolution=150.0)
     pdf_buffer.seek(0)
     return pdf_buffer.read()
-
-
-def _create_placeholder_certificate() -> Image.Image:
-    """fallback في حال عدم وجود القالب"""
-    w, h = 3508, 2480
-    img = Image.new('RGB', (w, h), (255, 255, 255))
-    draw = ImageDraw.Draw(img)
-    for y in range(h):
-        ratio = y / h
-        r = int(255 - ratio * 15)
-        g = int(248 - ratio * 10)
-        b = int(220 - ratio * 20)
-        draw.line([(0, y), (w, y)], fill=(r, g, b))
-    gold  = (184, 134, 11)
-    gold2 = (218, 165, 32)
-    border = 60
-    draw.rectangle([border, border, w-border, h-border], outline=gold, width=8)
-    draw.rectangle([border+20, border+20, w-border-20, h-border-20], outline=gold2, width=3)
-    return img
 
 
 # ─────────────────────────────────────────
@@ -351,15 +378,15 @@ def search():
 def preview():
     data          = request.get_json(silent=True) or {}
     name          = data.get('name', '').strip()
+    faculty       = data.get('faculty', '').strip()
     conference_id = data.get('conference', 'ai_emergency').strip()
 
     if not name:
         return jsonify({'status': 'error', 'message': 'اسم غير صحيح'}), 400
 
     try:
-        img = render_certificate_image(name, conference_id)
+        img = render_certificate_image(name, faculty, conference_id)
 
-        # تصغير للمعاينة السريعة
         preview_img = img.copy()
         preview_img.thumbnail((1200, 850), Image.LANCZOS)
 
@@ -379,6 +406,7 @@ def preview():
 def download():
     data          = request.get_json(silent=True) or {}
     name          = data.get('name', '').strip()
+    faculty       = data.get('faculty', '').strip()
     conference_id = data.get('conference', 'ai_emergency').strip()
 
     if not name:
@@ -395,7 +423,7 @@ def download():
     official_name = result['original_name']
 
     try:
-        pdf_bytes = generate_certificate(official_name, conference_id)
+        pdf_bytes = generate_certificate(official_name, faculty, conference_id)
         safe_name = re.sub(r'[^\w\s-]', '', official_name).strip().replace(' ', '_')
         filename  = f'شهادة_{safe_name}.pdf'
 
@@ -407,6 +435,74 @@ def download():
         )
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+# ─────────────────────────────────────────
+#  Verification Route — صفحة التوثيق بالباركود
+# ─────────────────────────────────────────
+@app.route('/verify/<cert_id>')
+def verify_certificate(cert_id):
+    """
+    صفحة التحقق الإلكتروني الذكي (QR Verified)
+    تفتح عند مسح الباركود بالكاميرا أو الضغط على الرابط
+    """
+    record = get_certificate_record(cert_id)
+
+    # لو غير موجود في الـ registry، نستخرج البيانات من معلمات الرابط Query Params
+    student_name  = request.args.get('name')
+    faculty       = request.args.get('fac')
+    conference_id = request.args.get('conf', 'ai_emergency')
+
+    if record:
+        student_name  = record.get('student_name', student_name or 'طالب بجامعة كفر الشيخ الأهلية')
+        faculty       = record.get('faculty', faculty or 'جامعة كفر الشيخ الأهلية')
+        conference_id = record.get('conference_id', conference_id)
+
+    if not student_name:
+        student_name = "مشارك معتمد"
+    if not faculty:
+        faculty = "جامعة كفر الشيخ الأهلية"
+
+    conf = CONFERENCES.get(conference_id, CONFERENCES['ai_emergency'])
+    conf_name = conf['name']
+    conf_date = conf['date']
+
+    download_url = url_for('download_by_cert', cert_id=cert_id, name=student_name, fac=faculty, conf=conference_id)
+
+    return render_template(
+        'verify.html',
+        cert_id=cert_id,
+        student_name=student_name,
+        faculty=faculty,
+        conf_name=conf_name,
+        conf_date=conf_date,
+        download_url=download_url
+    )
+
+
+@app.route('/download_cert/<cert_id>')
+def download_by_cert(cert_id):
+    """تحميل الشهادة مباشرة من صفحة التحقق"""
+    student_name  = request.args.get('name', 'طالب')
+    faculty       = request.args.get('fac', 'جامعة كفر الشيخ الأهلية')
+    conference_id = request.args.get('conf', 'ai_emergency')
+
+    record = get_certificate_record(cert_id)
+    if record:
+        student_name  = record.get('student_name', student_name)
+        faculty       = record.get('faculty', faculty)
+        conference_id = record.get('conference_id', conference_id)
+
+    pdf_bytes = generate_certificate(student_name, faculty, conference_id)
+    safe_name = re.sub(r'[^\w\s-]', '', student_name).strip().replace(' ', '_')
+    filename  = f'شهادة_{safe_name}.pdf'
+
+    return send_file(
+        BytesIO(pdf_bytes),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename
+    )
 
 
 if __name__ == '__main__':

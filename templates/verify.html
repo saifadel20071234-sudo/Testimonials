@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام التحقق الإلكتروني الذكي | جامعة كفر الشيخ الأهلية</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green-primary: #107c41;
+            --green-gradient: linear-gradient(135deg, #0e8549 0%, #16a34a 100%);
+            --navy-dark: #0c2548;
+            --navy-light: #13254f;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --bg-page: #0f172a;
+            --card-bg: #ffffff;
+            --border-light: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg-page);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(16, 124, 65, 0.25) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(12, 37, 72, 0.4) 0px, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* ── Modal Card Container ── */
+        .verify-card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 520px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ── Header ── */
+        .card-header {
+            background: var(--green-gradient);
+            padding: 32px 24px 28px;
+            text-align: center;
+            color: #ffffff;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 18px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.08);
+        }
+
+        .shield-icon-wrapper {
+            width: 68px;
+            height: 68px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .shield-icon-wrapper svg {
+            width: 36px;
+            height: 36px;
+            fill: #ffffff;
+        }
+
+        .badge-verified {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(4px);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: 0.3px;
+        }
+
+        .card-header h2 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+        }
+
+        .card-header p {
+            font-size: 13.5px;
+            opacity: 0.92;
+        }
+
+        /* ── Body ── */
+        .card-body {
+            padding: 24px 28px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 0;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 14.5px;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 13.5px;
+            min-width: 130px;
+        }
+
+        .info-value {
+            color: var(--text-dark);
+            font-weight: 700;
+            text-align: left;
+            flex: 1;
+            direction: rtl;
+        }
+
+        .serial-pill {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            direction: ltr;
+            display: inline-block;
+        }
+
+        .event-name {
+            color: #0369a1;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .status-badge {
+            background: #ecfdf5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ── Actions ── */
+        .card-footer {
+            padding: 8px 28px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-full-cert {
+            background: var(--navy-dark);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(12, 37, 72, 0.25);
+            cursor: pointer;
+        }
+
+        .btn-full-cert:hover {
+            background: #132f58;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(12, 37, 72, 0.35);
+        }
+
+        .btn-close-modal {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            padding: 10px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .btn-close-modal:hover {
+            color: var(--text-dark);
+        }
+    </style>
+</head>
+<body>
+
+<div class="verify-card">
+    <!-- Header -->
+    <div class="card-header">
+        <a href="/" class="close-btn" title="إغلاق">✕</a>
+        <div class="shield-icon-wrapper">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+            </svg>
+        </div>
+        <span class="badge-verified">نظام التحقق الإلكتروني الذكي (QR Verified)</span>
+        <h2>شهادة معتمدة وموثقة رسمياً</h2>
+        <p>صادرة عن جامعة كفر الشيخ الأهلية - رعاية الطلاب</p>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+        <div class="info-row">
+            <span class="info-label">رقم الوثيقة المسلسل:</span>
+            <div class="info-value">
+                <span class="serial-pill">{{ cert_id }}</span>
+            </div>
+        </div>
+
+        <div class="info-row">
+            <span class="info-label">اسم المشارك:</span>
+            <span class="info-value">الطالب / {{ student_name }}</span>
+        </div>
+
+        <div class="info-row">
+            <span class="info-label">الكلية / الجهة:</span>
+            <span class="info-value">{{ faculty }}</span>
+        </div>
+
+        <div class="info-row">
+            <span class="info-label">اسم الفعالية:</span>
+            <span class="info-value event-name">{{ conf_name }}</span>
+        </div>
+
+        <div class="info-row">
+            <span class="info-label">تاريخ الانعقاد:</span>
+            <span class="info-value">{{ conf_date }}</span>
+        </div>
+
+        <div class="info-row">
+            <span class="info-label">حالة التوثيق:</span>
+            <div class="info-value">
+                <span class="status-badge">
+                    <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    حضور معتمد وموثق
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card-footer">
+        <a href="{{ download_url }}" class="btn-full-cert">
+            📜 عرض الشهادة الأصلية الكاملة
+        </a>
+        <a href="/" class="btn-close-modal">
+            إغلاق نافذة التحقق
+        </a>
+    </div>
+</div>
+
+</body>
+</html>
