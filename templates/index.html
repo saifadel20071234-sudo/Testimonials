@@ -207,12 +207,82 @@
         .bar-developers .dev-label { color: #3e9ad7; font-weight: 600; }
         .bar-developers .dev-names { color: #ffffff; font-weight: 700; }
 
-        @media (max-width: 700px) {
-            .header-inner { justify-content: center; padding: 14px 16px; }
-            .header-left  { display: none; }
-            .logos-right  { order: 1; }
-            .header-center { order: 2; width: 100%; }
-            .logos-right img { height: 60px; width: 60px; }
+        @media (max-width: 768px) {
+            .header-inner {
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                padding: 14px 16px;
+                gap: 10px;
+            }
+            .logos-right {
+                order: 1;
+                justify-content: center;
+                gap: 12px;
+            }
+            .logos-right img {
+                height: 58px;
+                width: 58px;
+            }
+            .header-center {
+                order: 2;
+                width: 100%;
+            }
+            .header-left {
+                order: 3;
+                width: 100%;
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                margin-top: 2px;
+            }
+            .supervision-box {
+                width: auto;
+                max-width: 100%;
+                padding: 6px 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                flex-wrap: wrap;
+                background: #102144;
+            }
+            .supervision-box .sup-label {
+                margin-bottom: 0;
+                font-size: 11.5px;
+            }
+            .supervision-box .sup-name {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 12.5px;
+                line-height: 1.2;
+            }
+            .supervision-box .sup-name span {
+                display: inline;
+            }
+            .supervision-box .sup-name span + span::before {
+                content: " • ";
+                color: #e6b141;
+                margin-left: 6px;
+            }
+
+            /* شريط أسفل الهيدر على الموبايل */
+            .header-bottom-bar {
+                flex-direction: column;
+                padding: 8px 12px;
+                gap: 4px;
+                text-align: center;
+            }
+            .bar-conference {
+                justify-content: center;
+                font-size: 12.5px;
+            }
+            .bar-developers {
+                justify-content: center;
+                font-size: 11.5px;
+                white-space: nowrap;
+            }
         }
 
         /* ══════════════════════════════════════
@@ -1003,7 +1073,7 @@
             <div class="supervision-box">
                 <div class="sup-label">— تحت إشراف —</div>
                 <div class="sup-name">
-                    <span>د. هناء السيد</span>
+                    <span>د. هناء طنطاوي</span>
                     <span>د. أحمد قايد</span>
                 </div>
             </div>
@@ -1021,7 +1091,7 @@
         <div class="bar-developers">
             <span class="star">✦</span>
             <span class="dev-label">Developed by</span>
-            <span class="dev-names">Ziad Asaad &amp; Saif el eslam</span>
+            <span class="dev-names">Saif el eslam &amp; Ziad Asaad</span>
             <span class="star">✦</span>
         </div>
     </div>
@@ -1244,7 +1314,7 @@
 <!-- ═══ FOOTER ═══ -->
 <footer>
     <p class="footer-conf" id="footer-conf-name">منصة إصدار الشهادات الإلكترونية — جامعة كفر الشيخ الأهلية</p>
-    <p class="footer-copy">جميع الحقوق محفوظة &copy; 2026 &nbsp;|&nbsp; <span class="footer-dev">Ziad Asaad &amp; Saif el eslam</span> &nbsp;|&nbsp; <a href="/admin" style="color:var(--text-muted);text-decoration:none;font-size:12px;opacity:0.8;" title="لوحة تحكم المسؤول">🔐 بوابة الإدارة</a></p>
+    <p class="footer-copy">جميع الحقوق محفوظة &copy; 2026 &nbsp;|&nbsp; <span class="footer-dev">Saif el eslam &amp; Ziad Asaad</span> &nbsp;|&nbsp; <a href="/admin" style="color:var(--text-muted);text-decoration:none;font-size:12px;opacity:0.8;" title="لوحة تحكم المسؤول">🔐 بوابة الإدارة</a></p>
 </footer>
 
 <!-- ═══ CONFETTI ═══ -->
