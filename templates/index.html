@@ -482,6 +482,103 @@
             border-radius: 20px;
             margin-top: 4px;
             box-shadow: 0 3px 10px rgba(184,134,11,0.3);
+            transition: all 0.3s ease;
+        }
+
+        /* ── بطاقة مؤتمر الذكاء الاصطناعي (لمسة تقنية سيبرانية) ── */
+        .conf-card-ai {
+            border: 2px solid #bae6fd;
+            background: #f8fafc;
+        }
+        .conf-card-ai::before {
+            background: linear-gradient(135deg, rgba(2,132,199,0.05) 0%, rgba(14,165,233,0.08) 100%);
+        }
+        .conf-card-ai:hover {
+            border-color: #0284c7;
+            transform: translateY(-4px);
+            box-shadow: 0 14px 32px rgba(2, 132, 199, 0.22);
+        }
+        .conf-card-ai .conf-btn-label {
+            background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+        }
+
+        /* ── بطاقة مؤتمر المحاسبة (لمسة ذهبية ملكية رسمية) ── */
+        .conf-card-acc {
+            border: 2px solid #fde68a;
+            background: #fffdfa;
+        }
+        .conf-card-acc::before {
+            background: linear-gradient(135deg, rgba(184,134,11,0.05) 0%, rgba(217,119,6,0.08) 100%);
+        }
+        .conf-card-acc:hover {
+            border-color: #d97706;
+            transform: translateY(-4px);
+            box-shadow: 0 14px 32px rgba(217, 119, 6, 0.22);
+        }
+        .conf-card-acc .conf-btn-label {
+            background: linear-gradient(135deg, #b8860b 0%, #d97706 100%);
+            box-shadow: 0 4px 12px rgba(184, 134, 11, 0.35);
+        }
+
+        /* ── سمة مؤتمر الذكاء الاصطناعي (Dynamic Theme: AI) ── */
+        body.theme-ai .selected-conf-badge {
+            background: #082f49;
+            color: #38bdf8;
+            border-color: #0284c7;
+        }
+        body.theme-ai #name-input:focus,
+        body.theme-ai #faculty-input:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15);
+        }
+        body.theme-ai #search-btn {
+            background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35);
+        }
+        body.theme-ai #search-btn:hover {
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
+        }
+        body.theme-ai .preview-name-badge {
+            background: #f0f9ff;
+            border-color: #7dd3fc;
+            color: #0369a1;
+        }
+        body.theme-ai .spin-gold {
+            border-top-color: #0284c7;
+        }
+        body.theme-ai .back-to-home:hover {
+            color: #0284c7;
+        }
+
+        /* ── سمة مؤتمر المحاسبة (Dynamic Theme: Accounting) ── */
+        body.theme-accounting .selected-conf-badge {
+            background: #271a06;
+            color: #fbbf24;
+            border-color: #d97706;
+        }
+        body.theme-accounting #name-input:focus,
+        body.theme-accounting #faculty-input:focus {
+            border-color: #d97706;
+            box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.15);
+        }
+        body.theme-accounting #search-btn {
+            background: linear-gradient(135deg, #b8860b 0%, #d97706 100%);
+            box-shadow: 0 4px 15px rgba(184, 134, 11, 0.35);
+        }
+        body.theme-accounting #search-btn:hover {
+            box-shadow: 0 6px 20px rgba(184, 134, 11, 0.45);
+        }
+        body.theme-accounting .preview-name-badge {
+            background: #fefce8;
+            border-color: #fde047;
+            color: #854d0e;
+        }
+        body.theme-accounting .spin-gold {
+            border-top-color: #d97706;
+        }
+        body.theme-accounting .back-to-home:hover {
+            color: #d97706;
         }
 
         /* ══════════════════════════════════════
@@ -877,14 +974,14 @@
             <div class="conferences-grid">
 
                 <!-- مؤتمر الذكاء الاصطناعي -->
-                <div class="conf-card" onclick="selectConference('ai_emergency', 'مؤتمر: الذكاء الاصطناعي في الطوارئ والإسعافات الأولية')">
+                <div class="conf-card conf-card-ai" onclick="selectConference('ai_emergency', 'مؤتمر: الذكاء الاصطناعي في الطوارئ والإسعافات الأولية')">
                     <span class="conf-emoji">🤖</span>
                     <div class="conf-name">مؤتمر: الذكاء الاصطناعي في الطوارئ والإسعافات الأولية</div>
                     <span class="conf-btn-label">🔍 استخراج الشهادة</span>
                 </div>
 
                 <!-- مؤتمر المحاسبة -->
-                <div class="conf-card" onclick="selectConference('accounting', 'مؤتمر: المحاسبة والإدارة المالية')">
+                <div class="conf-card conf-card-acc" onclick="selectConference('accounting', 'مؤتمر: المحاسبة والإدارة المالية')">
                     <span class="conf-emoji">📊</span>
                     <div class="conf-name">مؤتمر: المحاسبة والإدارة المالية</div>
                     <span class="conf-btn-label">🔍 استخراج الشهادة</span>
@@ -1100,6 +1197,14 @@
         currentConference = confId;
         currentConfName   = confName;
 
+        // تطبيق السمة اللونية الخاصة بالمؤتمر المختار
+        document.body.classList.remove('theme-ai', 'theme-accounting');
+        if (confId === 'ai_emergency') {
+            document.body.classList.add('theme-ai');
+        } else if (confId === 'accounting') {
+            document.body.classList.add('theme-accounting');
+        }
+
         // تحديث الهيدر
         document.getElementById('header-conf-name').textContent  = confName;
         document.getElementById('footer-conf-name').textContent  = confName;
@@ -1122,6 +1227,10 @@
         confirmedFaculty = '';
         currentConference = '';
         currentConfName   = '';
+
+        // إعادة ضبط السمة اللونية للوضع الافتراضي
+        document.body.classList.remove('theme-ai', 'theme-accounting');
+
         document.getElementById('header-conf-name').textContent = 'منصة إصدار الشهادات الإلكترونية';
         document.getElementById('footer-conf-name').textContent = 'منصة إصدار الشهادات الإلكترونية — جامعة كفر الشيخ الأهلية';
         showScreen('screen-home');

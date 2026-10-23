@@ -34,6 +34,8 @@ CONFERENCES = {
         'date': '19 أكتوبر 2026',
         'code': '01',
         'excel': os.path.join(BASE_DIR, 'data', 'ai_emergency.xlsx'),
+        'conf_color': (10, 48, 92),      # كحلي سيبراني عميق
+        'slogan_color': (3, 105, 161),   # أزرق تقني هادئ
     },
     'accounting': {
         'name': 'مؤتمر المحاسبة والإدارة المالية',
@@ -42,6 +44,8 @@ CONFERENCES = {
         'date': '22 أكتوبر 2026',
         'code': '02',
         'excel': os.path.join(BASE_DIR, 'data', 'accounting.xlsx'),
+        'conf_color': (12, 37, 72),      # كحلي رسمي كلاسيكي
+        'slogan_color': (180, 83, 9),    # ذهبي كهرماني ملكي
     },
 }
 
@@ -377,10 +381,12 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
     draw_centered('تقديراً لمشاركته الفعالة وجهوده المتميزة في خدمة المنظومة الطلابية وإنجاح فعاليات:', 765, f_apprec, C_GRAY, max_w=2000)
 
     # 4. اسم المؤتمر
-    draw_centered(conf_name, 840, f_conf, C_NAVY_DARK, max_w=2000)
+    c_conf   = conf.get('conf_color', C_NAVY_DARK)
+    c_slogan = conf.get('slogan_color', C_RED_ACCENT)
+    draw_centered(conf_name, 840, f_conf, c_conf, max_w=2000)
 
     # 5. شعار المؤتمر
-    draw_centered(conf_slogan, 915, f_slogan, C_RED_ACCENT, max_w=2000)
+    draw_centered(conf_slogan, 915, f_slogan, c_slogan, max_w=2000)
 
     # 6. الخاتمة
     draw_centered('متمنين له دوام التوفيق والتميز والنجاح المستمر', 980, f_wish, C_GRAY, max_w=2000)
