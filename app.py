@@ -23,8 +23,8 @@ app.secret_key = os.environ.get('SECRET_KEY', 'knu-certificates-secret-key-2026'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max upload
 
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'knu2026admin')
-SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'saifadel20071234@gmail.com')
-SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', os.environ.get('GMAIL_APP_PASSWORD', ''))
+SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'saifadel20071234@gmail.com').strip()
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', os.environ.get('GMAIL_APP_PASSWORD', 'zjoqunhtbyobzwxg')).replace(' ', '').strip()
 BASE_DIR = os.path.dirname(__file__)
 
 # ─────────────────────────────────────────
@@ -413,15 +413,23 @@ def _send_certificate_email_worker(recipient_email, student_name, conf_name, cer
         msg.attach(MIMEText(body_html, 'html', 'utf-8'))
 
         safe_name = re.sub(r'[^\w\s-]', '', student_name).strip().replace(' ', '_')
+        pdf_prefix = 'Certificate_' if lang == 'en' else 'شهادة_'
         pdf_attach = MIMEApplication(pdf_bytes, _subtype="pdf")
-        pdf_attach.add_header('Content-Disposition', 'attachment', filename=f'شهادة_{safe_name}.pdf')
+        pdf_attach.add_header('Content-Disposition', 'attachment', filename=f'{pdf_prefix}{safe_name}.pdf')
         msg.attach(pdf_attach)
 
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=12)
-        server.starttls()
-        server.login(SMTP_EMAIL, SMTP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
+        # الاتصال بـ Gmail عبر SSL المباشر (465) أو TLS (587)
+        try:
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=15)
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.send_message(msg)
+            server.quit()
+        except Exception:
+            server = smtplib.SMTP('smtp.gmail.com', 587, timeout=15)
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.send_message(msg)
+            server.quit()
         print(f"Success: Certificate email sent to {recipient_email}")
     except Exception as e:
         print(f"Warning: could not send email to {recipient_email}: {e}")
