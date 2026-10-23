@@ -16,11 +16,15 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 from fuzzywuzzy import fuzz, process
 
+import threading
+
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'knu-certificates-secret-key-2026')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max upload
 
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'knu2026admin')
+SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'saifadel20071234@gmail.com')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', os.environ.get('GMAIL_APP_PASSWORD', ''))
 BASE_DIR = os.path.dirname(__file__)
 
 # ─────────────────────────────────────────
@@ -224,6 +228,11 @@ def normalize_arabic(text: str) -> str:
 #  Excel Loading & Fuzzy Search
 # ─────────────────────────────────────────
 _STUDENTS_CACHE = {}
+_STUDENTS_ROLES = {}
+
+def get_student_role(conference_id: str, student_name: str) -> str:
+    norm = normalize_arabic(student_name)
+    return _STUDENTS_ROLES.get(conference_id, {}).get(norm, 'attendee')
 
 def load_students(conference_id: str, force_reload: bool = False) -> dict:
     if not force_reload and conference_id in _STUDENTS_CACHE:
@@ -255,9 +264,17 @@ def load_students(conference_id: str, force_reload: bool = False) -> dict:
                 continue
             first_row = False
 
+            # فحص صفة الطالب من العمود الثاني (منظم / مشارك)
+            role = 'attendee'
+            if len(row) > 1 and row[1].value:
+                val = str(row[1].value).strip().lower()
+                if 'منظم' in val or 'تنظيم' in val or 'organizer' in val:
+                    role = 'organizer'
+
             if name:
                 normalized = normalize_arabic(name)
                 students[normalized] = name
+                _STUDENTS_ROLES.setdefault(conference_id, {})[normalized] = role
 
         wb.close()
     except Exception as e:
@@ -333,12 +350,90 @@ def _load_arabic_font(size: int, bold: bool = True):
 
 
 # ─────────────────────────────────────────
+#  Email Dispatching (Gmail SMTP)
+# ─────────────────────────────────────────
+def send_certificate_email_async(recipient_email: str, student_name: str, conf_name: str, cert_id: str, pdf_bytes: bytes, lang: str = 'ar'):
+    """تشغيل إرسال الإيميل في الخلفية دون أي تأخير للطالب"""
+    if not recipient_email or '@' not in recipient_email:
+        return
+    t = threading.Thread(
+        target=_send_certificate_email_worker,
+        args=(recipient_email.strip(), student_name, conf_name, cert_id, pdf_bytes, lang)
+    )
+    t.daemon = True
+    t.start()
+
+
+def _send_certificate_email_worker(recipient_email, student_name, conf_name, cert_id, pdf_bytes, lang):
+    if not SMTP_PASSWORD:
+        print(f"Notice: SMTP_PASSWORD is not set. Skipped sending email to {recipient_email}")
+        return
+    try:
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from email.mime.application import MIMEApplication
+
+        verify_url = f"https://testimonials-virid.vercel.app/verify/{cert_id}"
+        msg = MIMEMultipart()
+        msg['From'] = f"جامعة كفر الشيخ الأهلية <{SMTP_EMAIL}>"
+        msg['To'] = recipient_email
+        msg['Subject'] = f"🎓 شهادة مشاركة معتمدة - {conf_name}"
+
+        body_html = f"""
+        <div dir="rtl" style="font-family: Arial, Tahoma, sans-serif; background-color: #f8fafc; padding: 24px; color: #0c2548;">
+            <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.06);">
+                <div style="background: #0c2548; color: #ffffff; padding: 26px 20px; text-align: center;">
+                    <h2 style="margin: 0; color: #e6b141; font-size: 24px;">جامعة كفر الشيخ الأهلية</h2>
+                    <p style="margin: 6px 0 0; font-size: 14px; color: #cbd5e1;">الإدارة العامة لرعاية الطلاب — منصة الشهادات الإلكترونية</p>
+                </div>
+                <div style="padding: 28px; line-height: 1.8;">
+                    <p style="font-size: 16px;">مرحباً <strong>{student_name}</strong>،</p>
+                    <p style="font-size: 15px;">نهنئك بمشاركتك المتميزة في فعاليات:</p>
+                    <div style="background: #f1f5f9; border-right: 4px solid #b8860b; padding: 12px 16px; margin: 16px 0; font-weight: bold; font-size: 15px; color: #0c2548; border-radius: 4px;">
+                        {conf_name}
+                    </div>
+                    <p style="font-size: 14px; color: #334155;">مرفق مع هذه الرسالة نسختك الرسمية المعتمدة من الشهادة بصيغة <strong>PDF</strong> بجودة طباعة فائقة ومسجلة بسجلات الجامعة.</p>
+                    <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 14px; margin: 20px 0; text-align: center;">
+                        <span style="display: block; font-size: 13px; color: #0369a1; font-weight: bold;">رقم الوثيقة المسجل بالجامعة:</span>
+                        <strong style="font-size: 19px; color: #0c2548; letter-spacing: 1px;">{cert_id}</strong>
+                    </div>
+                    <div style="text-align: center; margin-top: 26px;">
+                        <a href="{verify_url}" style="background: #107c41; color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 25px; font-weight: bold; font-size: 15px; display: inline-block;">
+                            🛡️ فحص صفحة التحقق الإلكتروني الذكي
+                        </a>
+                    </div>
+                </div>
+                <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px; text-align: center; font-size: 12px; color: #64748b;">
+                    جميع الحقوق محفوظة © 2026 جامعة كفر الشيخ الأهلية — رعاية الطلاب
+                </div>
+            </div>
+        </div>
+        """
+        msg.attach(MIMEText(body_html, 'html', 'utf-8'))
+
+        safe_name = re.sub(r'[^\w\s-]', '', student_name).strip().replace(' ', '_')
+        pdf_attach = MIMEApplication(pdf_bytes, _subtype="pdf")
+        pdf_attach.add_header('Content-Disposition', 'attachment', filename=f'شهادة_{safe_name}.pdf')
+        msg.attach(pdf_attach)
+
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=12)
+        server.starttls()
+        server.login(SMTP_EMAIL, SMTP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        print(f"Success: Certificate email sent to {recipient_email}")
+    except Exception as e:
+        print(f"Warning: could not send email to {recipient_email}: {e}")
+
+
+# ─────────────────────────────────────────
 #  Full High-Res Certificate Rendering
 # ─────────────────────────────────────────
-def render_certificate_image(student_name: str, faculty: str, conference_id: str, lang: str = 'ar', name_en: str = '') -> Image.Image:
+def render_certificate_image(student_name: str, faculty: str, conference_id: str, lang: str = 'ar', name_en: str = '', role: str = '') -> Image.Image:
     """
     يبني صورة الشهادة كاملة بدقة فائقة مطابقة للشهادة الرسمية
-    مع الباركود الفعلي ورقم التوثيق واسم الطالب وكليته واسم المؤتمر (عربي / إنجليزي)
+    مع الباركود الفعلي ورقم التوثيق واسم الطالب وكليته واسم المؤتمر (عربي / إنجليزي - منظم / مشارك)
     """
     conf = CONFERENCES.get(conference_id, CONFERENCES['ai_emergency'])
     conf_name   = conf['name']
@@ -346,6 +441,10 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
 
     # التعرف الذكي على أقرب كلية رسمية من قائمة الجامعة
     fac_text = match_faculty(faculty)
+
+    # تحديد دور الطالب (منظم / حضور)
+    if not role:
+        role = get_student_role(conference_id, student_name)
 
     # رقم التوثيق الفريد
     cert_id = generate_cert_id(student_name, conference_id)
@@ -429,7 +528,12 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
         fac_en = FACULTIES_EN.get(fac_text, f"Faculty of {fac_text.replace('كلية ', '')}")
         draw_centered_en(fac_en, 690, f_faculty, C_BLUE, max_w=1800)
 
-        draw_centered_en('In recognition of active participation and distinguished contribution to:', 765, f_apprec, C_GRAY, max_w=2000)
+        # صيغة التقدير بالإنجليزية (منظم vs مشارك)
+        if role == 'organizer':
+            apprec_en = 'In recognition of distinguished efforts and dedication in organizing and contributing to the success of:'
+        else:
+            apprec_en = 'In recognition of active participation and distinguished contribution to the events of:'
+        draw_centered_en(apprec_en, 765, f_apprec, C_GRAY, max_w=2000)
 
         conf_en = conf.get('name_en', conf_name)
         slogan_en = conf.get('slogan_en', conf_slogan)
@@ -451,7 +555,12 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
 
         draw_centered(fac_text, 690, f_faculty, C_BLUE, max_w=1800)
 
-        draw_centered('تقديراً لمشاركته الفعالة وجهوده المتميزة في خدمة المنظومة الطلابية وإنجاح فعاليات:', 765, f_apprec, C_GRAY, max_w=2000)
+        # صيغة التقدير بالعربية (منظم vs مشارك)
+        if role == 'organizer':
+            apprec_ar = 'تقديراً لجهوده المتميزة ومشاركته الفعالة في تنظيم وإنجاح فعاليات:'
+        else:
+            apprec_ar = 'تقديراً لمشاركته الفعالة وجهوده المتميزة في خدمة المنظومة الطلابية وإنجاح فعاليات:'
+        draw_centered(apprec_ar, 765, f_apprec, C_GRAY, max_w=2000)
 
         c_conf   = conf.get('conf_color', C_NAVY_DARK)
         c_slogan = conf.get('slogan_color', C_RED_ACCENT)
@@ -467,9 +576,9 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
     return img
 
 
-def generate_certificate(student_name: str, faculty: str, conference_id: str, lang: str = 'ar', name_en: str = '') -> bytes:
+def generate_certificate(student_name: str, faculty: str, conference_id: str, lang: str = 'ar', name_en: str = '', role: str = '') -> bytes:
     """توليد ملف PDF في الذاكرة بالكامل"""
-    img = render_certificate_image(student_name, faculty, conference_id, lang=lang, name_en=name_en)
+    img = render_certificate_image(student_name, faculty, conference_id, lang=lang, name_en=name_en, role=role)
     pdf_buffer = BytesIO()
     img.save(pdf_buffer, format='PDF', resolution=150.0)
     pdf_buffer.seek(0)
@@ -527,12 +636,13 @@ def preview():
     conference_id = data.get('conference', 'ai_emergency').strip()
     lang          = data.get('lang', 'ar').strip()
     name_en       = data.get('name_en', '').strip()
+    role          = data.get('role', '').strip()
 
     if not name:
         return jsonify({'status': 'error', 'message': 'اسم غير صحيح'}), 400
 
     try:
-        img = render_certificate_image(name, faculty, conference_id, lang=lang, name_en=name_en)
+        img = render_certificate_image(name, faculty, conference_id, lang=lang, name_en=name_en, role=role)
         cert_id = generate_cert_id(name, conference_id)
         verify_url = f"https://testimonials-virid.vercel.app/verify/{cert_id}"
         conf = CONFERENCES.get(conference_id, CONFERENCES['ai_emergency'])
@@ -568,6 +678,8 @@ def download():
     conference_id = data.get('conference', 'ai_emergency').strip()
     lang          = data.get('lang', 'ar').strip()
     name_en       = data.get('name_en', '').strip()
+    role          = data.get('role', '').strip()
+    email         = data.get('email', '').strip()
 
     if not name:
         return jsonify({'status': 'error', 'message': 'اسم غير صحيح'}), 400
@@ -581,13 +693,29 @@ def download():
         return jsonify({'status': 'error', 'message': 'الاسم غير موجود'}), 403
 
     official_name = result['original_name']
+    if not role:
+        role = get_student_role(conference_id, official_name)
 
     try:
-        pdf_bytes = generate_certificate(official_name, faculty, conference_id, lang=lang, name_en=name_en)
+        pdf_bytes = generate_certificate(official_name, faculty, conference_id, lang=lang, name_en=name_en, role=role)
         target_name = name_en.strip() if (lang == 'en' and name_en.strip()) else official_name
         safe_name = re.sub(r'[^\w\s-]', '', target_name).strip().replace(' ', '_')
         prefix = "Certificate" if lang == 'en' else "شهادة"
         filename  = f'{prefix}_{safe_name}.pdf'
+
+        # إرسال إيميل تلقائي في الخلفية في حال كتابة الطالب لبريده الإلكتروني
+        if email:
+            conf = CONFERENCES[conference_id]
+            conf_display_title = conf.get('name_en', conf['name']) if lang == 'en' else conf['name']
+            cert_id = generate_cert_id(official_name, conference_id)
+            send_certificate_email_async(
+                recipient_email=email,
+                student_name=target_name,
+                conf_name=conf_display_title,
+                cert_id=cert_id,
+                pdf_bytes=pdf_bytes,
+                lang=lang
+            )
 
         return send_file(
             BytesIO(pdf_bytes),
@@ -687,14 +815,32 @@ def admin_dashboard():
     # إحصائيات وقوائم الطلاب
     students_ai = load_students('ai_emergency')
     students_acc = load_students('accounting')
+    total_students = len(students_ai) + len(students_acc)
 
     registry_count = 0
+    faculty_stats = {}
     if os.path.exists(REGISTRY_FILE):
         try:
             with open(REGISTRY_FILE, 'r', encoding='utf-8') as f:
-                registry_count = len(json.load(f))
+                rdata = json.load(f)
+                registry_count = len(rdata)
+                for item in rdata.values():
+                    fac = item.get('faculty', 'جامعة كفر الشيخ الأهلية')
+                    faculty_stats[fac] = faculty_stats.get(fac, 0) + 1
         except Exception:
             pass
+
+    claimed_pct = round((registry_count / max(total_students, 1)) * 100, 1)
+
+    ai_roles = _STUDENTS_ROLES.get('ai_emergency', {})
+    acc_roles = _STUDENTS_ROLES.get('accounting', {})
+    total_org = sum(1 for r in list(ai_roles.values()) + list(acc_roles.values()) if r == 'organizer')
+    total_att = total_students - total_org
+
+    sorted_faculties = sorted(faculty_stats.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    students_ai_list = [{'name': name, 'role': get_student_role('ai_emergency', name)} for name in students_ai.values()]
+    students_acc_list = [{'name': name, 'role': get_student_role('accounting', name)} for name in students_acc.values()]
 
     return render_template(
         'admin.html',
@@ -702,10 +848,14 @@ def admin_dashboard():
         conferences=CONFERENCES,
         count_ai=len(students_ai),
         count_acc=len(students_acc),
-        total_students=len(students_ai) + len(students_acc),
+        total_students=total_students,
         registry_count=registry_count,
-        students_ai=list(students_ai.values()),
-        students_acc=list(students_acc.values())
+        claimed_pct=claimed_pct,
+        total_org=total_org,
+        total_att=total_att,
+        sorted_faculties=sorted_faculties,
+        students_ai=students_ai_list,
+        students_acc=students_acc_list
     )
 
 

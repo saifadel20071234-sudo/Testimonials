@@ -331,6 +331,16 @@
         .badge-ai { background: #e0f2fe; color: #0369a1; }
         .badge-acc { background: #fef3c7; color: #b45309; }
 
+        .badge-role {
+            display: inline-block;
+            font-size: 11px;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+        .badge-org { background: #fdf4ff; color: #9333ea; border: 1px solid #f0abfc; }
+        .badge-att { background: #f1f5f9; color: #475569; }
+
         .action-btns {
             display: flex;
             gap: 6px;
@@ -438,6 +448,76 @@
         </div>
     </div>
 
+    <!-- تحليلات إحصائية تفاعلية متقدمة -->
+    <div class="analytics-card" style="background:white; border-radius:16px; border:1px solid var(--border); padding:24px; margin-bottom:28px; box-shadow:0 4px 20px rgba(0,0,0,0.03);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+            <div>
+                <h3 style="font-size:18px; color:var(--navy-dark); font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <span>📊</span> مؤشرات استخراج وتوثيق الشهادات
+                </h3>
+                <p style="font-size:12.5px; color:var(--text-muted); margin-top:4px;">متابعة تفاعلية لنسب الإقبال وتوزيع الأدوار والكليات الأكثر تفاعلاً</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <span style="font-size:12px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:6px 14px; border-radius:20px; font-weight:700;">
+                    🟢 تحديث حي ومباشر
+                </span>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px; align-items:stretch;">
+            <!-- نسبة الإنجاز والتحميل -->
+            <div style="background:#f8fafc; border-radius:12px; padding:18px; border:1px solid #e2e8f0; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+                        <span style="font-size:13.5px; font-weight:700; color:var(--navy-dark);">نسبة الشهادات المستخرجة والموثقة</span>
+                        <span style="font-size:18px; font-weight:800; color:#b8860b;">{{ claimed_pct }}%</span>
+                    </div>
+                    <div style="width:100%; height:12px; background:#e2e8f0; border-radius:10px; overflow:hidden; margin:8px 0;">
+                        <div style="width:{{ claimed_pct }}%; height:100%; background:linear-gradient(90deg, #b8860b, #daa520); border-radius:10px; transition:width 1s ease;"></div>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-top:12px;">
+                    <span>تم توثيق: <strong>{{ registry_count }}</strong> شهادة</span>
+                    <span>المتبقي: <strong>{{ total_students - registry_count if total_students >= registry_count else 0 }}</strong></span>
+                </div>
+            </div>
+
+            <!-- فئات المشاركة (منظمين vs حضور) -->
+            <div style="background:#f8fafc; border-radius:12px; padding:18px; border:1px solid #e2e8f0;">
+                <div style="font-size:13.5px; font-weight:700; color:var(--navy-dark); margin-bottom:14px;">توزيع فئات الطلاب المسجلين</div>
+                <div style="display:flex; gap:12px;">
+                    <div style="flex:1; background:white; border-radius:10px; padding:12px; border:1px solid #e2e8f0; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#9333ea;">{{ total_org }}</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">🎖️ فريق التنظيم</div>
+                    </div>
+                    <div style="flex:1; background:white; border-radius:10px; padding:12px; border:1px solid #e2e8f0; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#0369a1;">{{ total_att }}</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">🎓 مشاركين وحضور</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- أعلى الكليات مشاركة -->
+            <div style="background:#f8fafc; border-radius:12px; padding:18px; border:1px solid #e2e8f0;">
+                <div style="font-size:13.5px; font-weight:700; color:var(--navy-dark); margin-bottom:10px;">أكثر الكليات تسجيلاً للشهادات</div>
+                {% if sorted_faculties %}
+                <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px;">
+                    {% for fac_name, fac_count in sorted_faculties %}
+                    <li style="display:flex; justify-content:space-between; align-items:center; background:white; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px;">
+                        <span style="font-weight:600; color:var(--navy-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">🏛️ {{ fac_name }}</span>
+                        <span style="font-weight:700; color:#0f172a; background:#f1f5f9; padding:2px 8px; border-radius:6px;">{{ fac_count }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:16px 0;">
+                    سيظهر تصنيف الكليات فور بدء الطلاب في استخراج شهاداتهم
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
     <div class="admin-sections">
         <!-- قسم جدول الطلاب -->
         <div class="panel-card">
@@ -462,19 +542,29 @@
                             <th>#</th>
                             <th>اسم الطالب</th>
                             <th>المؤتمر</th>
+                            <th>الصفة</th>
                             <th>الإجراءات السريعة</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% set ns = namespace(idx=1) %}
                         {% for s in students_ai %}
-                        <tr data-conf="ai_emergency" data-name="{{ s }}">
+                        {% set s_name = s.name if s.name is defined else s %}
+                        {% set s_role = s.role if s.role is defined else 'attendee' %}
+                        <tr data-conf="ai_emergency" data-name="{{ s_name }}">
                             <td>{{ ns.idx }}</td>
-                            <td><strong>{{ s }}</strong></td>
+                            <td><strong>{{ s_name }}</strong></td>
                             <td><span class="badge-conf badge-ai">الذكاء الاصطناعي</span></td>
                             <td>
+                                {% if s_role == 'organizer' %}
+                                <span class="badge-role badge-org">🎖️ منظم</span>
+                                {% else %}
+                                <span class="badge-role badge-att">مشارك</span>
+                                {% endif %}
+                            </td>
+                            <td>
                                 <div class="action-btns">
-                                    <button class="btn-action" onclick="openCertTest('{{ s }}', 'ai_emergency')">👁️ معاينة</button>
+                                    <button class="btn-action" onclick="openCertTest('{{ s_name }}', 'ai_emergency')">👁️ معاينة</button>
                                 </div>
                             </td>
                         </tr>
@@ -482,13 +572,22 @@
                         {% endfor %}
 
                         {% for s in students_acc %}
-                        <tr data-conf="accounting" data-name="{{ s }}">
+                        {% set s_name = s.name if s.name is defined else s %}
+                        {% set s_role = s.role if s.role is defined else 'attendee' %}
+                        <tr data-conf="accounting" data-name="{{ s_name }}">
                             <td>{{ ns.idx }}</td>
-                            <td><strong>{{ s }}</strong></td>
+                            <td><strong>{{ s_name }}</strong></td>
                             <td><span class="badge-conf badge-acc">المحاسبة</span></td>
                             <td>
+                                {% if s_role == 'organizer' %}
+                                <span class="badge-role badge-org">🎖️ منظم</span>
+                                {% else %}
+                                <span class="badge-role badge-att">مشارك</span>
+                                {% endif %}
+                            </td>
+                            <td>
                                 <div class="action-btns">
-                                    <button class="btn-action" onclick="openCertTest('{{ s }}', 'accounting')">👁️ معاينة</button>
+                                    <button class="btn-action" onclick="openCertTest('{{ s_name }}', 'accounting')">👁️ معاينة</button>
                                 </div>
                             </td>
                         </tr>

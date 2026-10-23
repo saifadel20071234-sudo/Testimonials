@@ -1184,6 +1184,15 @@
                 </datalist>
             </div>
 
+            <div class="input-group" style="margin-top: -6px;">
+                <input
+                    type="email"
+                    id="email-input"
+                    placeholder="✉️ البريد الإلكتروني (اختياري لاستلام الشهادة عليه)..."
+                    autocomplete="email"
+                />
+            </div>
+
             <button class="btn btn-primary" id="search-btn" onclick="searchName()">
                 <span id="search-btn-text">🔍 ابحث عن شهادتي</span>
                 <span id="search-spinner" style="display:none;"><span class="spinner"></span></span>
@@ -1279,6 +1288,10 @@
                 نتمنى لك التوفيق والنجاح دائماً.
             </p>
 
+            <div id="email-sent-badge" style="display:none; background: #ecfdf5; border: 1px solid #10b981; color: #065f46; padding: 12px 16px; border-radius: 10px; margin: 16px auto; font-size: 0.92rem; max-width: 520px; line-height: 1.6;">
+                📩 تم إرسال نسخة رسمية من الشهادة تلقائياً إلى بريدك الإلكتروني: <strong id="done-email-addr"></strong>
+            </div>
+
             <div class="preview-actions" style="margin: 24px 0 16px;">
                 <button class="btn btn-whatsapp" onclick="shareOnWhatsApp()">
                     <span>💬 مشاركة الإنجاز على واتساب</span>
@@ -1325,6 +1338,7 @@
     // ── State ──
     let confirmedName     = '';
     let confirmedFaculty  = '';
+    let confirmedEmail    = '';
     let currentConference = '';  // 'ai_emergency' | 'accounting'
     let currentConfName   = '';  // اسم المؤتمر بالعربي
     let currentCertId     = '';
@@ -1386,10 +1400,14 @@
     function goHome() {
         confirmedName = '';
         confirmedFaculty = '';
+        confirmedEmail = '';
         currentConference = '';
         currentConfName   = '';
         currentLang = 'ar';
         currentNameEn = '';
+
+        const emailInp = document.getElementById('email-input');
+        if (emailInp) emailInp.value = '';
 
         const enInp = document.getElementById('en-name-input');
         if (enInp) enInp.value = '';
@@ -1412,6 +1430,9 @@
     function clearSearch() {
         document.getElementById('name-input').value = '';
         document.getElementById('faculty-input').value = '';
+        const emailInp = document.getElementById('email-input');
+        if (emailInp) emailInp.value = '';
+        confirmedEmail = '';
         hideAlert('error-msg');
         document.getElementById('suggestions-box').style.display = 'none';
         document.getElementById('name-input').focus();
@@ -1426,11 +1447,27 @@
     async function searchName() {
         const name    = document.getElementById('name-input').value.trim();
         const faculty = document.getElementById('faculty-input').value.trim();
+        const emailInp = document.getElementById('email-input');
+        const email   = emailInp ? emailInp.value.trim() : '';
 
-        if (!name) { showAlert('error-msg', '⚠️ يرجى كتابة اسمك أولاً'); return; }
+        // الاسم إجباري
+        if (!name) { 
+            showAlert('error-msg', '⚠️ يرجى كتابة اسمك الكامل أولاً'); 
+            document.getElementById('name-input').focus();
+            return; 
+        }
+
+        // الكلية إجباري لضمان دقة وتوثيق الشهادة
+        if (!faculty) { 
+            showAlert('error-msg', '⚠️ يرجى اختيار أو كتابة اسم كليتك أولاً لضمان دقة الشهادة'); 
+            document.getElementById('faculty-input').focus();
+            return; 
+        }
+
         if (!currentConference) { goHome(); return; }
 
         confirmedFaculty = faculty;
+        confirmedEmail   = email;
 
         hideAlert('error-msg');
         document.getElementById('suggestions-box').style.display = 'none';
@@ -1612,6 +1649,7 @@
                 body: JSON.stringify({ 
                     name: confirmedName, 
                     faculty: confirmedFaculty,
+                    email: confirmedEmail,
                     conference: currentConference,
                     lang: currentLang,
                     name_en: currentNameEn
@@ -1642,6 +1680,15 @@
                 showScreen('screen-done');
                 document.getElementById('done-message').innerHTML =
                     `مبروك <strong>${targetName}</strong>!<br>شهادتك جاهزة للطباعة معتمدة وموثقة برمز الاستجابة السريعة (QR). نتمنى لك التوفيق والنجاح دائماً 🌟`;
+                
+                const emailBadge = document.getElementById('email-sent-badge');
+                if (confirmedEmail && emailBadge) {
+                    document.getElementById('done-email-addr').textContent = confirmedEmail;
+                    emailBadge.style.display = 'block';
+                } else if (emailBadge) {
+                    emailBadge.style.display = 'none';
+                }
+                
                 launchConfetti();
             }, 500);
 
