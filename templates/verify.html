@@ -254,14 +254,14 @@
             box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);
         }
 
-        .btn-copy-link {
-            background: #f1f5f9;
-            color: var(--navy-dark);
-            border: 1px solid var(--border-light);
+        .btn-linkedin-verify {
+            background: linear-gradient(135deg, #0a66c2 0%, #004182 100%);
+            color: #ffffff;
+            border: none;
             border-radius: 12px;
-            padding: 12px;
+            padding: 13px;
             font-family: 'Cairo', sans-serif;
-            font-size: 14px;
+            font-size: 14.5px;
             font-weight: 700;
             text-align: center;
             display: flex;
@@ -270,10 +270,12 @@
             gap: 8px;
             cursor: pointer;
             transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(10, 102, 194, 0.25);
         }
 
-        .btn-copy-link:hover {
-            background: #e2e8f0;
+        .btn-linkedin-verify:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(10, 102, 194, 0.35);
         }
 
         .toast-verify {
@@ -383,16 +385,14 @@
         <button onclick="shareOnWhatsApp()" class="btn-wa-share">
             💬 مشاركة التوثيق على واتساب
         </button>
-        <button onclick="copyVerifyLink()" class="btn-copy-link">
-            📋 نسخ رابط التوثيق
+        <button onclick="addToLinkedIn()" class="btn-linkedin-verify">
+            💼 إضافة الاعتماد إلى LinkedIn
         </button>
         <a href="/" class="btn-close-modal">
             إغلاق نافذة التحقق
         </a>
     </div>
 </div>
-
-<div id="toast-verify" class="toast-verify"></div>
 
 <script>
     function shareOnWhatsApp() {
@@ -401,15 +401,17 @@
         window.open(url, '_blank');
     }
 
-    function copyVerifyLink() {
-        navigator.clipboard.writeText(window.location.href).then(() => {
-            const toast = document.getElementById('toast-verify');
-            toast.textContent = '✅ تم نسخ رابط التوثيق بنجاح!';
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3500);
-        }).catch(() => {
-            prompt('انسخ الرابط:', window.location.href);
-        });
+    function addToLinkedIn() {
+        const certName = `شهادة مشاركة: {{ conf_name }}`;
+        const orgName = 'Kafrelsheikh National University (جامعة كفر الشيخ الأهلية)';
+        const liUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME`
+            + `&name=${encodeURIComponent(certName)}`
+            + `&organizationName=${encodeURIComponent(orgName)}`
+            + `&issueYear=2026`
+            + `&issueMonth=10`
+            + `&certUrl=${encodeURIComponent(window.location.href)}`
+            + `&certId=${encodeURIComponent('{{ cert_id }}')}`;
+        window.open(liUrl, '_blank');
     }
 </script>
 

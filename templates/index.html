@@ -690,6 +690,74 @@
             color: white !important;
         }
 
+        /* ── LinkedIn Button ── */
+        .btn-linkedin {
+            background: linear-gradient(135deg, #0a66c2 0%, #004182 100%);
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(10, 102, 194, 0.3);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-linkedin:hover {
+            background: linear-gradient(135deg, #095196 0%, #003366 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(10, 102, 194, 0.4);
+            color: white !important;
+        }
+
+        /* ── Language Switcher ── */
+        .lang-switch-wrap {
+            display: inline-flex;
+            background: #ede8dc;
+            padding: 4px;
+            border-radius: 30px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(184, 134, 11, 0.25);
+            gap: 4px;
+        }
+        .lang-btn {
+            border: none;
+            background: transparent;
+            font-family: 'Cairo', sans-serif;
+            font-size: 13.5px;
+            font-weight: 700;
+            padding: 8px 18px;
+            border-radius: 22px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.25s ease;
+        }
+        .lang-btn.active {
+            background: var(--navy-dark);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .en-input {
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto 16px;
+            padding: 9px 16px;
+            border: 1.5px solid var(--gold-light);
+            border-radius: 10px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 14px;
+            text-align: center;
+            background: white;
+            color: var(--navy-dark);
+            outline: none;
+            display: block;
+        }
+        .en-input:focus {
+            border-color: var(--navy-dark);
+            box-shadow: 0 0 0 3px rgba(12, 37, 72, 0.15);
+        }
+
         /* ── Zoom Hint on Preview ── */
         .zoom-hint {
             display: inline-flex;
@@ -1073,6 +1141,27 @@
 
             <div class="preview-name-badge" id="preview-name-badge">---</div>
 
+            <!-- شريط اختيار لغة الشهادة -->
+            <div class="lang-switch-wrap">
+                <button type="button" class="lang-btn active" id="lang-ar-btn" onclick="setCertLang('ar')">
+                    🇪🇬 النسخة العربية
+                </button>
+                <button type="button" class="lang-btn" id="lang-en-btn" onclick="setCertLang('en')">
+                    🇬🇧 English Version
+                </button>
+            </div>
+
+            <!-- حقل إدخال الاسم بالإنجليزية (اختياري) -->
+            <div id="en-name-box" style="display:none;">
+                <input
+                    type="text"
+                    id="en-name-input"
+                    class="en-input"
+                    placeholder="اكتب اسمك بالإنجليزي (اختياري)..."
+                    onchange="reloadEnglishPreview()"
+                />
+            </div>
+
             <!-- Certificate Preview Image -->
             <div class="cert-preview-container" id="cert-container">
                 <div class="cert-loading" id="cert-loading">
@@ -1095,8 +1184,8 @@
                 <button class="btn btn-whatsapp" id="share-wa-btn" onclick="shareOnWhatsApp()">
                     <span>💬 مشاركة على واتساب</span>
                 </button>
-                <button class="btn btn-outline" id="copy-link-btn" onclick="copyVerifyLink()">
-                    <span>📋 نسخ رابط التوثيق</span>
+                <button class="btn btn-linkedin" id="share-li-btn" onclick="addToLinkedIn()">
+                    <span>💼 إضافة إلى LinkedIn</span>
                 </button>
                 <a class="btn btn-outline" id="view-verify-btn" target="_blank" href="#" style="text-decoration:none;">
                     <span>🛡️ صفحة التحقق الذكي</span>
@@ -1124,8 +1213,8 @@
                 <button class="btn btn-whatsapp" onclick="shareOnWhatsApp()">
                     <span>💬 مشاركة الإنجاز على واتساب</span>
                 </button>
-                <button class="btn btn-outline" onclick="copyVerifyLink()">
-                    <span>📋 نسخ رابط التوثيق</span>
+                <button class="btn btn-linkedin" onclick="addToLinkedIn()">
+                    <span>💼 إضافة إلى LinkedIn</span>
                 </button>
                 <a class="btn btn-outline" id="view-verify-btn-done" target="_blank" href="#" style="text-decoration:none;">
                     <span>🛡️ صفحة التحقق</span>
@@ -1171,6 +1260,8 @@
     let currentCertId     = '';
     let currentVerifyUrl  = '';
     let currentPreviewImg = '';
+    let currentLang       = 'ar';
+    let currentNameEn     = '';
 
     // ── Helpers ──
     function showScreen(id) {
@@ -1227,6 +1318,17 @@
         confirmedFaculty = '';
         currentConference = '';
         currentConfName   = '';
+        currentLang = 'ar';
+        currentNameEn = '';
+
+        const enInp = document.getElementById('en-name-input');
+        if (enInp) enInp.value = '';
+        const enBox = document.getElementById('en-name-box');
+        if (enBox) enBox.style.display = 'none';
+        const arBtn = document.getElementById('lang-ar-btn');
+        const enBtn = document.getElementById('lang-en-btn');
+        if (arBtn) arBtn.classList.add('active');
+        if (enBtn) enBtn.classList.remove('active');
 
         // إعادة ضبط السمة اللونية للوضع الافتراضي
         document.body.classList.remove('theme-ai', 'theme-accounting');
@@ -1301,10 +1403,36 @@
         }
     }
 
+    // ── Switch Certificate Language ──
+    function setCertLang(lang) {
+        currentLang = lang;
+        const arBtn = document.getElementById('lang-ar-btn');
+        const enBtn = document.getElementById('lang-en-btn');
+        const enBox = document.getElementById('en-name-box');
+
+        if (arBtn) arBtn.classList.toggle('active', lang === 'ar');
+        if (enBtn) enBtn.classList.toggle('active', lang === 'en');
+        if (enBox) enBox.style.display = (lang === 'en') ? 'block' : 'none';
+
+        if (confirmedName) {
+            goToPreview(confirmedName, confirmedFaculty);
+        }
+    }
+
+    function reloadEnglishPreview() {
+        const inp = document.getElementById('en-name-input');
+        if (inp) {
+            currentNameEn = inp.value.trim();
+            if (confirmedName) {
+                goToPreview(confirmedName, confirmedFaculty);
+            }
+        }
+    }
+
     // ── Go To Preview ──
     async function goToPreview(name, faculty) {
         showScreen('screen-preview');
-        document.getElementById('preview-name-badge').textContent = name;
+        document.getElementById('preview-name-badge').textContent = (currentLang === 'en' && currentNameEn) ? currentNameEn : name;
         document.getElementById('cert-preview-img').style.display = 'none';
         document.getElementById('cert-loading').style.display = 'flex';
         hideAlert('download-error');
@@ -1316,7 +1444,9 @@
                 body: JSON.stringify({ 
                     name: name, 
                     faculty: faculty || confirmedFaculty,
-                    conference: currentConference 
+                    conference: currentConference,
+                    lang: currentLang,
+                    name_en: currentNameEn
                 })
             });
             const data = await res.json();
@@ -1353,18 +1483,22 @@
         window.open(url, '_blank');
     }
 
-    // ── Copy Link ──
-    function copyVerifyLink() {
-        if (!currentVerifyUrl) return;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(currentVerifyUrl).then(() => {
-                showToast('✅ تم نسخ رابط توثيق الشهادة بنجاح!');
-            }).catch(() => {
-                prompt('انسخ رابط التوثيق التالي:', currentVerifyUrl);
-            });
-        } else {
-            prompt('انسخ رابط التوثيق التالي:', currentVerifyUrl);
-        }
+    // ── LinkedIn Add Certification ──
+    function addToLinkedIn() {
+        if (!currentCertId) return;
+        const certName = currentConfName ? `شهادة مشاركة: ${currentConfName}` : 'شهادة مشاركة معتمدة';
+        const orgName  = 'Kafrelsheikh National University (جامعة كفر الشيخ الأهلية)';
+        const certUrl  = currentVerifyUrl || window.location.href;
+
+        const liUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME`
+            + `&name=${encodeURIComponent(certName)}`
+            + `&organizationName=${encodeURIComponent(orgName)}`
+            + `&issueYear=2026`
+            + `&issueMonth=10`
+            + `&certUrl=${encodeURIComponent(certUrl)}`
+            + `&certId=${encodeURIComponent(currentCertId)}`;
+
+        window.open(liUrl, '_blank');
     }
 
     // ── Zoom Modal ──
@@ -1408,7 +1542,9 @@
                 body: JSON.stringify({ 
                     name: confirmedName, 
                     faculty: confirmedFaculty,
-                    conference: currentConference 
+                    conference: currentConference,
+                    lang: currentLang,
+                    name_en: currentNameEn
                 })
             });
 
@@ -1423,7 +1559,9 @@
             const url      = URL.createObjectURL(blob);
             const a        = document.createElement('a');
             a.href         = url;
-            a.download     = `شهادة_${confirmedName}.pdf`;
+            const targetName = (currentLang === 'en' && currentNameEn) ? currentNameEn : confirmedName;
+            const prefix = (currentLang === 'en') ? 'Certificate_' : 'شهادة_';
+            a.download     = `${prefix}${targetName}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1433,7 +1571,7 @@
             setTimeout(() => {
                 showScreen('screen-done');
                 document.getElementById('done-message').innerHTML =
-                    `مبروك <strong>${confirmedName}</strong>!<br>شهادتك جاهزة للطباعة معتمدة وموثقة برمز الاستجابة السريعة (QR). نتمنى لك التوفيق والنجاح دائماً 🌟`;
+                    `مبروك <strong>${targetName}</strong>!<br>شهادتك جاهزة للطباعة معتمدة وموثقة برمز الاستجابة السريعة (QR). نتمنى لك التوفيق والنجاح دائماً 🌟`;
                 launchConfetti();
             }, 500);
 

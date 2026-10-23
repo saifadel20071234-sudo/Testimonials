@@ -29,9 +29,12 @@ BASE_DIR = os.path.dirname(__file__)
 CONFERENCES = {
     'ai_emergency': {
         'name': 'مؤتمر الذكاء الاصطناعي في الطوارئ والإسعافات الأولية',
+        'name_en': 'Artificial Intelligence in Emergency & First Aid Conference',
         'display': 'مؤتمر: الذكاء الاصطناعي في الطوارئ والإسعافات الأولية',
         'slogan': '« الذكاء الاصطناعي في الطوارئ والإسعافات الأولية - إنقاذ الأرواح بالتقنيات الذكية »',
+        'slogan_en': '« AI in Emergency & First Aid - Saving Lives with Smart Technologies »',
         'date': '19 أكتوبر 2026',
+        'date_en': 'October 19, 2026',
         'code': '01',
         'excel': os.path.join(BASE_DIR, 'data', 'ai_emergency.xlsx'),
         'conf_color': (10, 48, 92),      # كحلي سيبراني عميق
@@ -39,14 +42,34 @@ CONFERENCES = {
     },
     'accounting': {
         'name': 'مؤتمر المحاسبة والإدارة المالية',
+        'name_en': 'Accounting & Digital Financial Management Conference',
         'display': 'مؤتمر: المحاسبة والإدارة المالية',
         'slogan': '« آفاق المحاسبة والإدارة المالية الرقمية ودورها في التنمية المستدامة »',
+        'slogan_en': '« Digital Horizons in Accounting & Financial Management for Sustainable Development »',
         'date': '22 أكتوبر 2026',
+        'date_en': 'October 22, 2026',
         'code': '02',
         'excel': os.path.join(BASE_DIR, 'data', 'accounting.xlsx'),
         'conf_color': (12, 37, 72),      # كحلي رسمي كلاسيكي
         'slogan_color': (180, 83, 9),    # ذهبي كهرماني ملكي
     },
+}
+
+FACULTIES_EN = {
+    'كلية الطب البشري': 'Faculty of Human Medicine',
+    'كلية طب الفم والأسنان': 'Faculty of Oral & Dental Medicine',
+    'كلية العلاج الطبيعي': 'Faculty of Physical Therapy',
+    'كلية الصيدلة': 'Faculty of Pharmacy',
+    'كلية التمريض': 'Faculty of Nursing',
+    'كلية الطب البيطري': 'Faculty of Veterinary Medicine',
+    'كلية الزراعة': 'Faculty of Agriculture',
+    'كلية الهندسة': 'Faculty of Engineering',
+    'كلية الحاسبات والمعلومات والذكاء الاصطناعي': 'Faculty of Computers, Information & AI',
+    'كلية العلوم': 'Faculty of Science',
+    'كلية اللغات والعلوم الإنسانية': 'Faculty of Languages & Humanities',
+    'كلية الأعمال': 'Faculty of Business',
+    'كلية الفنون والتصميم': 'Faculty of Arts & Design',
+    'جامعة كفر الشيخ الأهلية': 'Kafrelsheikh National University',
 }
 
 CERT_BASE_PATH = os.path.join(BASE_DIR, 'static', 'images', 'certificate_base.jpg')
@@ -312,10 +335,10 @@ def _load_arabic_font(size: int, bold: bool = True):
 # ─────────────────────────────────────────
 #  Full High-Res Certificate Rendering
 # ─────────────────────────────────────────
-def render_certificate_image(student_name: str, faculty: str, conference_id: str) -> Image.Image:
+def render_certificate_image(student_name: str, faculty: str, conference_id: str, lang: str = 'ar', name_en: str = '') -> Image.Image:
     """
     يبني صورة الشهادة كاملة بدقة فائقة مطابقة للشهادة الرسمية
-    مع الباركود الفعلي ورقم التوثيق واسم الطالب وكليته واسم المؤتمر
+    مع الباركود الفعلي ورقم التوثيق واسم الطالب وكليته واسم المؤتمر (عربي / إنجليزي)
     """
     conf = CONFERENCES.get(conference_id, CONFERENCES['ai_emergency'])
     conf_name   = conf['name']
@@ -359,7 +382,6 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
         tw = bbox[2] - bbox[0]
         th = bbox[3] - bbox[1]
 
-        # تصغير الخط تلقائياً لو النص أطول من المساحة المسموحة
         cur_font = font
         while tw > max_w and getattr(cur_font, 'size', 30) > 18:
             new_size = cur_font.size - 2
@@ -370,28 +392,21 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
 
         draw.text((w // 2 - tw // 2, y - th // 2), bidi, font=cur_font, fill=fill)
 
-    # 1. اسم الطالب (مكتوب بوضوح: الطالب / [الاسم])
-    student_display = f"الطالب / {student_name}"
-    draw_centered(student_display, 615, f_name, C_NAVY_DARK, max_w=1900)
+    def draw_centered_en(text: str, y: int, font, fill, max_w: int = 2100):
+        bbox = draw.textbbox((0, 0), text, font=font)
+        tw = bbox[2] - bbox[0]
+        th = bbox[3] - bbox[1]
 
-    # 2. الكلية التي كتبها الطالب
-    draw_centered(fac_text, 690, f_faculty, C_BLUE, max_w=1800)
+        cur_font = font
+        while tw > max_w and getattr(cur_font, 'size', 30) > 18:
+            new_size = cur_font.size - 2
+            cur_font = _load_arabic_font(new_size, bold=True)
+            bbox = draw.textbbox((0, 0), text, font=cur_font)
+            tw = bbox[2] - bbox[0]
+            th = bbox[3] - bbox[1]
 
-    # 3. صيغة التقدير والمشاركة
-    draw_centered('تقديراً لمشاركته الفعالة وجهوده المتميزة في خدمة المنظومة الطلابية وإنجاح فعاليات:', 765, f_apprec, C_GRAY, max_w=2000)
+        draw.text((w // 2 - tw // 2, y - th // 2), text, font=cur_font, fill=fill)
 
-    # 4. اسم المؤتمر
-    c_conf   = conf.get('conf_color', C_NAVY_DARK)
-    c_slogan = conf.get('slogan_color', C_RED_ACCENT)
-    draw_centered(conf_name, 840, f_conf, c_conf, max_w=2000)
-
-    # 5. شعار المؤتمر
-    draw_centered(conf_slogan, 915, f_slogan, c_slogan, max_w=2000)
-
-    # 6. الخاتمة
-    draw_centered('متمنين له دوام التوفيق والتميز والنجاح المستمر', 980, f_wish, C_GRAY, max_w=2000)
-
-    # 7. توليد رمز الاستجابة السريعة (QR Code) بدقة عالية ومسافات متناسقة
     qr_url = f"https://testimonials-virid.vercel.app/verify/{cert_id}"
     qr = qrcode.QRCode(
         version=None,
@@ -404,22 +419,57 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
     qr_img = qr.make_image(fill_color='#0c2548', back_color='white').convert('RGB')
     qr_img = qr_img.resize((150, 150), Image.NEAREST)
     qr_w, qr_h = qr_img.size
+    img.paste(qr_img, (w // 2 - qr_w // 2, 1315))
 
-    qr_x = w // 2 - qr_w // 2
-    qr_y = 1315
-    img.paste(qr_img, (qr_x, qr_y))
+    if lang == 'en':
+        # ── English Certificate Version ──
+        display_en = name_en.strip() if name_en and name_en.strip() else student_name
+        draw_centered_en(f"Student / {display_en}", 615, f_name, C_NAVY_DARK, max_w=1900)
 
-    # 8. بيانات التوثيق أسفل الباركود بتباعد مريح وبدون أي تداخل
-    draw_centered('امسح الباركود للتحقق من صحة الشهادة', 1492, f_serial, C_NAVY_DARK)
-    draw_centered(f'رقم التوثيق: {cert_id}', 1522, f_serial, C_BLUE)
-    draw_centered('• شهادة رسمية معتمدة ومسجلة بسجلات الجامعة •', 1552, f_serial, (22, 130, 60))
+        fac_en = FACULTIES_EN.get(fac_text, f"Faculty of {fac_text.replace('كلية ', '')}")
+        draw_centered_en(fac_en, 690, f_faculty, C_BLUE, max_w=1800)
+
+        draw_centered_en('In recognition of active participation and distinguished contribution to:', 765, f_apprec, C_GRAY, max_w=2000)
+
+        conf_en = conf.get('name_en', conf_name)
+        slogan_en = conf.get('slogan_en', conf_slogan)
+        c_conf   = conf.get('conf_color', C_NAVY_DARK)
+        c_slogan = conf.get('slogan_color', C_RED_ACCENT)
+        draw_centered_en(conf_en, 840, f_conf, c_conf, max_w=2000)
+        draw_centered_en(slogan_en, 915, f_slogan, c_slogan, max_w=2000)
+
+        draw_centered_en('Wishing continued excellence, distinguished success, and leadership', 980, f_wish, C_GRAY, max_w=2000)
+
+        draw_centered_en('Scan QR Code for Official Verification', 1492, f_serial, C_NAVY_DARK)
+        draw_centered_en(f'Serial No: {cert_id}', 1522, f_serial, C_BLUE)
+        draw_centered_en('• Official University Accredited Certificate •', 1552, f_serial, (22, 130, 60))
+
+    else:
+        # ── Arabic Certificate Version ──
+        student_display = f"الطالب / {student_name}"
+        draw_centered(student_display, 615, f_name, C_NAVY_DARK, max_w=1900)
+
+        draw_centered(fac_text, 690, f_faculty, C_BLUE, max_w=1800)
+
+        draw_centered('تقديراً لمشاركته الفعالة وجهوده المتميزة في خدمة المنظومة الطلابية وإنجاح فعاليات:', 765, f_apprec, C_GRAY, max_w=2000)
+
+        c_conf   = conf.get('conf_color', C_NAVY_DARK)
+        c_slogan = conf.get('slogan_color', C_RED_ACCENT)
+        draw_centered(conf_name, 840, f_conf, c_conf, max_w=2000)
+        draw_centered(conf_slogan, 915, f_slogan, c_slogan, max_w=2000)
+
+        draw_centered('متمنين له دوام التوفيق والتميز والنجاح المستمر', 980, f_wish, C_GRAY, max_w=2000)
+
+        draw_centered('امسح الباركود للتحقق من صحة الشهادة', 1492, f_serial, C_NAVY_DARK)
+        draw_centered(f'رقم التوثيق: {cert_id}', 1522, f_serial, C_BLUE)
+        draw_centered('• شهادة رسمية معتمدة ومسجلة بسجلات الجامعة •', 1552, f_serial, (22, 130, 60))
 
     return img
 
 
-def generate_certificate(student_name: str, faculty: str, conference_id: str) -> bytes:
+def generate_certificate(student_name: str, faculty: str, conference_id: str, lang: str = 'ar', name_en: str = '') -> bytes:
     """توليد ملف PDF في الذاكرة بالكامل"""
-    img = render_certificate_image(student_name, faculty, conference_id)
+    img = render_certificate_image(student_name, faculty, conference_id, lang=lang, name_en=name_en)
     pdf_buffer = BytesIO()
     img.save(pdf_buffer, format='PDF', resolution=150.0)
     pdf_buffer.seek(0)
@@ -475,16 +525,18 @@ def preview():
     name          = data.get('name', '').strip()
     faculty       = data.get('faculty', '').strip()
     conference_id = data.get('conference', 'ai_emergency').strip()
+    lang          = data.get('lang', 'ar').strip()
+    name_en       = data.get('name_en', '').strip()
 
     if not name:
         return jsonify({'status': 'error', 'message': 'اسم غير صحيح'}), 400
 
     try:
-        img = render_certificate_image(name, faculty, conference_id)
+        img = render_certificate_image(name, faculty, conference_id, lang=lang, name_en=name_en)
         cert_id = generate_cert_id(name, conference_id)
         verify_url = f"https://testimonials-virid.vercel.app/verify/{cert_id}"
         conf = CONFERENCES.get(conference_id, CONFERENCES['ai_emergency'])
-        conf_name = conf['name']
+        conf_name = conf.get('name_en', conf['name']) if lang == 'en' else conf['name']
 
         preview_img = img.copy()
         preview_img.thumbnail((1200, 850), Image.LANCZOS)
@@ -500,7 +552,8 @@ def preview():
             'image': f'data:image/jpeg;base64,{img_b64}',
             'cert_id': cert_id,
             'verify_url': verify_url,
-            'conf_name': conf_name
+            'conf_name': conf_name,
+            'lang': lang
         })
 
     except Exception as e:
@@ -513,6 +566,8 @@ def download():
     name          = data.get('name', '').strip()
     faculty       = data.get('faculty', '').strip()
     conference_id = data.get('conference', 'ai_emergency').strip()
+    lang          = data.get('lang', 'ar').strip()
+    name_en       = data.get('name_en', '').strip()
 
     if not name:
         return jsonify({'status': 'error', 'message': 'اسم غير صحيح'}), 400
@@ -528,9 +583,11 @@ def download():
     official_name = result['original_name']
 
     try:
-        pdf_bytes = generate_certificate(official_name, faculty, conference_id)
-        safe_name = re.sub(r'[^\w\s-]', '', official_name).strip().replace(' ', '_')
-        filename  = f'شهادة_{safe_name}.pdf'
+        pdf_bytes = generate_certificate(official_name, faculty, conference_id, lang=lang, name_en=name_en)
+        target_name = name_en.strip() if (lang == 'en' and name_en.strip()) else official_name
+        safe_name = re.sub(r'[^\w\s-]', '', target_name).strip().replace(' ', '_')
+        prefix = "Certificate" if lang == 'en' else "شهادة"
+        filename  = f'{prefix}_{safe_name}.pdf'
 
         return send_file(
             BytesIO(pdf_bytes),
