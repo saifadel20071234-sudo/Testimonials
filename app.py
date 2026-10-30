@@ -57,6 +57,138 @@ CONFERENCES = {
         'conf_color': (12, 37, 72),      # كحلي رسمي كلاسيكي
         'slogan_color': (180, 83, 9),    # ذهبي كهرماني ملكي
     },
+
+    # ── الأنشطة والبطولات الرياضية (الشهادات والمسابقات) ──
+    'sport_chess': {
+        'name': 'بطولة الشطرنج لطلاب الجامعة',
+        'name_en': 'University Student Chess Championship',
+        'display': 'بطولة: الشطرنج والتفكير الاستراتيجي',
+        'slogan': '« النشاط الرياضي ورعاية الطلاب — بطولة الشطرنج والتفكير الاستراتيجي »',
+        'slogan_en': '« Student Sports & Youth Care - Strategic Chess Championship »',
+        'date': '2026',
+        'date_en': '2026',
+        'code': 'CH01',
+        'excel': os.path.join(BASE_DIR, 'data', 'sport_chess.xlsx'),
+        'conf_color': (30, 41, 59),
+        'slogan_color': (71, 85, 105),
+    },
+    'sport_table_tennis_single': {
+        'name': 'بطولة تنس الطاولة (فردي طلبة وطالبات)',
+        'name_en': 'Table Tennis Singles Championship',
+        'display': 'بطولة: تنس الطاولة (فردي)',
+        'slogan': '« النشاط الرياضي ورعاية الطلاب — بطولة تنس الطاولة الفردية »',
+        'slogan_en': '« Student Sports & Youth Care - Table Tennis Singles Tournament »',
+        'date': '2026',
+        'date_en': '2026',
+        'code': 'TT01',
+        'excel': os.path.join(BASE_DIR, 'data', 'sport_table_tennis_single.xlsx'),
+        'conf_color': (15, 118, 110),
+        'slogan_color': (13, 148, 136),
+    },
+    'sport_table_tennis_double': {
+        'name': 'بطولة تنس الطاولة (زوجي فرق)',
+        'name_en': 'Table Tennis Doubles Championship',
+        'display': 'بطولة: تنس الطاولة (زوجي)',
+        'slogan': '« النشاط الرياضي ورعاية الطلاب — بطولة تنس الطاولة الزوجية »',
+        'slogan_en': '« Student Sports & Youth Care - Table Tennis Doubles Tournament »',
+        'date': '2026',
+        'date_en': '2026',
+        'code': 'TT02',
+        'excel': os.path.join(BASE_DIR, 'data', 'sport_table_tennis_double.xlsx'),
+        'conf_color': (15, 118, 110),
+        'slogan_color': (13, 148, 136),
+    },
+    'sport_darts_single': {
+        'name': 'بطولة الدارتس وتصويب السهام (فردي)',
+        'name_en': 'Darts Singles Championship',
+        'display': 'بطولة: الدارتس (فردي)',
+        'slogan': '« النشاط الرياضي ورعاية الطلاب — بطولة الدارتس ودقة التصويب »',
+        'slogan_en': '« Student Sports & Youth Care - Darts Singles Tournament »',
+        'date': '2026',
+        'date_en': '2026',
+        'code': 'DR01',
+        'excel': os.path.join(BASE_DIR, 'data', 'sport_darts_single.xlsx'),
+        'conf_color': (180, 83, 9),
+        'slogan_color': (217, 119, 6),
+    },
+    'sport_darts_double': {
+        'name': 'بطولة الدارتس وتصويب السهام (زوجي فرق)',
+        'name_en': 'Darts Doubles Championship',
+        'display': 'بطولة: الدارتس (زوجي)',
+        'slogan': '« النشاط الرياضي ورعاية الطلاب — بطولة الدارتس للفرق والزوجي »',
+        'slogan_en': '« Student Sports & Youth Care - Darts Doubles Tournament »',
+        'date': '2026',
+        'date_en': '2026',
+        'code': 'DR02',
+        'excel': os.path.join(BASE_DIR, 'data', 'sport_darts_double.xlsx'),
+        'conf_color': (180, 83, 9),
+        'slogan_color': (217, 119, 6),
+    },
+    'sport_karate': {
+        'name': 'بطولة الكاراتيه (كاتا وكوميتيه)',
+        'name_en': 'Karate Championship (Kata & Kumite)',
+        'display': 'بطولة: الكاراتيه',
+        'slogan': '« النشاط الرياضي ورعاية الطلاب — بطولة الفنون القتالية والكاراتيه »',
+        'slogan_en': '« Student Sports & Youth Care - Karate Martial Arts Championship »',
+        'date': '2026',
+        'date_en': '2026',
+        'code': 'KR01',
+        'excel': os.path.join(BASE_DIR, 'data', 'sport_karate.xlsx'),
+        'conf_color': (185, 28, 28),
+        'slogan_color': (220, 38, 38),
+    },
+    'sport_boxing': {
+        'name': 'بطولة الملاكمة لطلاب الجامعة',
+        'name_en': 'University Boxing Championship',
+        'display': 'بطولة: الملاكمة',
+        'slogan': '« النشاط الرياضي ورعاية الطلاب — بطولة الملاكمة للجامعة »',
+        'slogan_en': '« Student Sports & Youth Care - University Boxing Tournament »',
+        'date': '2026',
+        'date_en': '2026',
+        'code': 'BX01',
+        'excel': os.path.join(BASE_DIR, 'data', 'sport_boxing.xlsx'),
+        'conf_color': (147, 51, 234),
+        'slogan_color': (168, 85, 247),
+    },
+    'sport_football': {
+        'name': 'دوري كرة القدم لطلاب الجامعة',
+        'name_en': 'University Football League',
+        'display': 'دوري: كرة القدم',
+        'slogan': '« النشاط الرياضي ورعاية الطلاب — دوري كرة القدم لطلاب الجامعة »',
+        'slogan_en': '« Student Sports & Youth Care - University Football League »',
+        'date': '2026',
+        'date_en': '2026',
+        'code': 'FB01',
+        'excel': os.path.join(BASE_DIR, 'data', 'sport_football.xlsx'),
+        'conf_color': (16, 124, 65),
+        'slogan_color': (22, 163, 74),
+    },
+    'sport_basketball': {
+        'name': 'دوري كرة السلة لطلاب الجامعة',
+        'name_en': 'University Basketball Tournament',
+        'display': 'دوري: كرة السلة',
+        'slogan': '« النشاط الرياضي ورعاية الطلاب — دوري كرة السلة لطلاب الجامعة »',
+        'slogan_en': '« Student Sports & Youth Care - Basketball Tournament »',
+        'date': '2026',
+        'date_en': '2026',
+        'code': 'BB01',
+        'excel': os.path.join(BASE_DIR, 'data', 'sport_basketball.xlsx'),
+        'conf_color': (194, 65, 12),
+        'slogan_color': (234, 88, 12),
+    },
+    'sport_volleyball': {
+        'name': 'دوري الكرة الطائرة لطلاب الجامعة',
+        'name_en': 'University Volleyball Tournament',
+        'display': 'دوري: الكرة الطائرة',
+        'slogan': '« النشاط الرياضي ورعاية الطلاب — دوري الكرة الطائرة للجامعة »',
+        'slogan_en': '« Student Sports & Youth Care - Volleyball Tournament »',
+        'date': '2026',
+        'date_en': '2026',
+        'code': 'VB01',
+        'excel': os.path.join(BASE_DIR, 'data', 'sport_volleyball.xlsx'),
+        'conf_color': (3, 105, 161),
+        'slogan_color': (14, 165, 233),
+    },
 }
 
 FACULTIES_EN = {
@@ -965,6 +1097,71 @@ def admin_upload_excel():
         })
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'خطأ أثناء قراءة الملف: {str(e)}'}), 500
+
+
+# ─────────────────────────────────────────
+#  نظام التسجيل في الأنشطة الطلابية
+# ─────────────────────────────────────────
+REGISTRATIONS_FILE = os.path.join(BASE_DIR, 'data', 'activity_registrations.json')
+
+def load_activity_registrations() -> list:
+    if os.path.exists(REGISTRATIONS_FILE):
+        try:
+            with open(REGISTRATIONS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            return []
+    return []
+
+def save_activity_registration(record: dict):
+    records = load_activity_registrations()
+    records.append(record)
+    try:
+        with open(REGISTRATIONS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(records, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving registration: {e}")
+
+@app.route('/api/activity/register', methods=['POST'])
+def activity_register():
+    data = request.get_json(silent=True) or {}
+    name = data.get('name', '').strip()
+    faculty = data.get('faculty', '').strip()
+    year = data.get('year', '').strip()
+    phone = data.get('phone', '').strip()
+    student_id = data.get('student_id', '').strip()
+    sport_id = data.get('sport_id', '').strip()
+    sport_name = data.get('sport_name', '').strip()
+    category = data.get('category', '').strip()
+
+    if not name or not faculty or not phone:
+        return jsonify({'status': 'error', 'message': 'يرجى ملء جميع الحقول المطلوبة (الاسم، الكلية، ورقم الهاتف)'}), 400
+
+    import random
+    from datetime import datetime
+    reg_code = f"REG-2026-{random.randint(1000, 9999)}"
+    record = {
+        'reg_code': reg_code,
+        'name': name,
+        'faculty': faculty,
+        'year': year,
+        'phone': phone,
+        'student_id': student_id,
+        'sport_id': sport_id,
+        'sport_name': sport_name,
+        'category': category,
+        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'status': 'confirmed'
+    }
+    save_activity_registration(record)
+
+    return jsonify({
+        'status': 'ok',
+        'reg_code': reg_code,
+        'sport_name': sport_name,
+        'student_name': name,
+        'message': f'تم تأكيد تسجيل اشتراكك بنجاح في {sport_name}!'
+    })
 
 
 if __name__ == '__main__':

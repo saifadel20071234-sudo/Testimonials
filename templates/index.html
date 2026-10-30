@@ -581,55 +581,209 @@
             transform: translateX(-3px);
         }
 
-        /* شبكة المعاينة للأنشطة الطلابية */
-        .activities-preview-grid {
+        /* ══════════════════════════════════════
+           STUDENT ACTIVITIES FLOW — مسار الأنشطة والبطولات
+        ══════════════════════════════════════ */
+        .act-flow-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 42px 34px;
+            box-shadow:
+                0 4px 6px -1px rgba(0,0,0,0.05),
+                0 10px 40px -5px var(--shadow),
+                0 0 0 1px rgba(184,134,11,0.1);
+            text-align: center;
+        }
+
+        .act-breadcrumb-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .act-crumb-badge {
+            font-size: 13px;
+            font-weight: 700;
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+            padding: 5px 14px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .act-step {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .act-step.active {
+            display: block;
+        }
+
+        .act-games-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 14px;
-            margin: 22px 0;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 18px;
+            margin-top: 24px;
+        }
+
+        @media (max-width: 580px) {
+            .act-games-grid { grid-template-columns: 1fr; }
+            .act-flow-card { padding: 32px 18px; }
+        }
+
+        .act-game-card {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px 20px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .act-game-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(16,185,129,0.04) 0%, rgba(3,105,161,0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .act-game-card:hover::before { opacity: 1; }
+
+        .act-game-card:hover {
+            border-color: #10b981;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(16,185,129,0.16);
+        }
+
+        .act-game-card .game-emoji {
+            font-size: 44px;
+            display: block;
+            margin-bottom: 10px;
+            transition: transform 0.3s ease;
+        }
+        .act-game-card:hover .game-emoji {
+            transform: scale(1.15) rotate(-5deg);
+        }
+
+        .act-game-card .game-title {
+            font-family: 'Amiri', serif;
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 6px;
+        }
+
+        .act-game-card .game-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .act-game-card .game-btn {
+            width: 100%;
+            padding: 9px 16px;
+            font-size: 13.5px;
+            font-weight: 700;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .game-btn-register {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+        }
+        .game-btn-register:hover {
+            box-shadow: 0 6px 16px rgba(16,185,129,0.45);
+            transform: translateY(-1px);
+        }
+
+        .game-btn-cert {
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(184,134,11,0.3);
+        }
+        .game-btn-cert:hover {
+            box-shadow: 0 6px 16px rgba(184,134,11,0.45);
+            transform: translateY(-1px);
+        }
+
+        /* ── Registration Modal ── */
+        .act-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(12, 37, 72, 0.75);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .act-modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .act-modal-content {
+            background: var(--white);
+            border-radius: var(--radius);
+            max-width: 540px;
+            width: 100%;
+            padding: 34px 28px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            border: 2px solid #bbf7d0;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
             text-align: right;
         }
 
-        .activity-preview-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 16px 14px;
+        .act-modal-header {
+            text-align: center;
+            margin-bottom: 20px;
             position: relative;
-            transition: all 0.25s ease;
         }
-        .activity-preview-card:hover {
-            border-color: #10b981;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(0,0,0,0.05);
-        }
-        .activity-preview-card .act-emoji {
-            font-size: 28px;
-            display: block;
-            margin-bottom: 8px;
-        }
-        .activity-preview-card h4 {
-            font-size: 15px;
-            color: var(--dark);
-            margin-bottom: 4px;
-            font-weight: 700;
-        }
-        .activity-preview-card p {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin: 0;
-            line-height: 1.5;
-        }
-        .activity-preview-card .act-tag {
-            display: inline-block;
+
+        .act-modal-close {
+            position: absolute;
+            left: 0;
+            top: 0;
             background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
             color: #64748b;
-            font-size: 10.5px;
-            font-weight: 700;
-            padding: 2px 9px;
-            border-radius: 12px;
-            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
+        .act-modal-close:hover { background: #fee2e2; color: #dc2626; }
 
         /* ══════════════════════════════════════
            SCREEN HOME — اختيار المؤتمر
@@ -829,6 +983,36 @@
         }
         body.theme-accounting .back-to-home:hover {
             color: #d97706;
+        }
+
+        /* ── سمة الأنشطة والبطولات الرياضية (Dynamic Theme: Sports) ── */
+        body.theme-sport .selected-conf-badge {
+            background: #064e3b;
+            color: #6ee7b7;
+            border-color: #10b981;
+        }
+        body.theme-sport #name-input:focus,
+        body.theme-sport #faculty-input:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+        }
+        body.theme-sport #search-btn {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+        }
+        body.theme-sport #search-btn:hover {
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+        }
+        body.theme-sport .preview-name-badge {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #15803d;
+        }
+        body.theme-sport .spin-gold {
+            border-top-color: #10b981;
+        }
+        body.theme-sport .back-to-home:hover {
+            color: #10b981;
         }
 
         /* ══════════════════════════════════════
@@ -1358,72 +1542,217 @@
         </div>
     </div>
 
-    <!-- ── SCREEN 2: Student Activities — الأنشطة الطلابية ── -->
+    <!-- ── SCREEN 2: Student Activities — الأنشطة والبطولات الطلابية ── -->
     <div class="screen" id="screen-activities">
-        <div class="card" style="text-align:center; padding: 45px 35px;">
-            <!-- زر العودة للبوابة الرئيسية -->
-            <div class="back-to-home" onclick="goToPortal()" style="margin-bottom: 24px;">
-                ➤ العودة للبوابة الرئيسية
-            </div>
+        <div class="act-flow-card">
 
-            <div class="selected-conf-badge" style="background:#f0fdf4; color:#15803d; border-color:#86efac; margin-bottom:20px;">
-                🏆 الإدارة العامة لرعاية الطلاب — قطاع الأنشطة الطلابية
-            </div>
-
-            <span class="card-icon" style="font-size:62px; margin-bottom:14px; display:inline-block;">🎯</span>
-            <h2 style="font-size:28px; margin-bottom:10px;">الأنشطة الطلابية</h2>
-            <p class="subtitle" style="font-size:15px; max-width:620px; margin:0 auto 28px; line-height:1.7;">
-                المساحة المركزية لجميع الفعاليات، المسابقات، والأسر الطلابية بجامعة كفر الشيخ الأهلية.<br>
-                يجري حالياً إعداد المنظومة وتجهيز كافة الأقسام لاستقبال التسجيل والمشاركات.
-            </p>
-
-            <!-- شبكة تصنيفات الأنشطة المستقبلية كمعاينة أنيقة وفارغة -->
-            <div class="activities-preview-grid">
-                <div class="activity-preview-card">
-                    <span class="act-emoji">⚽</span>
-                    <h4>النشاط الرياضي</h4>
-                    <p>دوريات الكليات والبطولات والمسابقات الرياضية</p>
-                    <span class="act-tag">قريباً</span>
+            <!-- شريط التتبع والعودة -->
+            <div class="act-breadcrumb-bar">
+                <div class="back-to-home" id="act-back-btn" onclick="actGoBack()" style="margin:0;">
+                    ➤ العودة للبوابة الرئيسية
                 </div>
-                <div class="activity-preview-card">
-                    <span class="act-emoji">🎭</span>
-                    <h4>النشاط الثقافي والفني</h4>
-                    <p>المسرح، الموسيقى، المعارض، الفنون التشكيلية، والشعر</p>
-                    <span class="act-tag">قريباً</span>
-                </div>
-                <div class="activity-preview-card">
-                    <span class="act-emoji">🏕️</span>
-                    <h4>الجوالة والخدمة العامة</h4>
-                    <p>المعسكرات الكشفية والعمل التطوعي وخدمة البيئة</p>
-                    <span class="act-tag">قريباً</span>
-                </div>
-                <div class="activity-preview-card">
-                    <span class="act-emoji">🤝</span>
-                    <h4>الأسر والاتحادات الطلابية</h4>
-                    <p>الأنشطة الاجتماعية والرحلات والمبادرات الطلابية</p>
-                    <span class="act-tag">قريباً</span>
-                </div>
-                <div class="activity-preview-card">
-                    <span class="act-emoji">💡</span>
-                    <h4>النشاط العلمي والتكنولوجي</h4>
-                    <p>الابتكارات، الذكاء الاصطناعي، والمسابقات العلمية والتقنية</p>
-                    <span class="act-tag">قريباً</span>
+                <div class="act-crumb-badge" id="act-crumb-badge">
+                    <span>🏆</span>
+                    <span id="act-crumb-text">قطاع الأنشطة الطلابية والبطولات</span>
                 </div>
             </div>
 
-            <!-- صندوق تنبيه هادئ -->
-            <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; padding:20px; margin-top:28px;">
-                <span style="font-size:20px; display:block; margin-bottom:6px;">✨</span>
-                <p style="color:var(--text-muted); font-size:14px; margin:0; line-height:1.6;">
-                    <strong>هذه المساحة مجهزة وفارغة حالياً</strong> — سنقوم بربطها تباعاً واستقبال الأنشطة، الجداول، ونماذج تسجيل الطلاب فور اعتمادها من رعاية الطلاب.
+            <!-- ── STEP 1: اختيار المسار (تسجيل أم شهادات) ── -->
+            <div class="act-step active" id="act-step-mode">
+                <span class="card-icon" style="font-size:56px; margin-bottom:12px; display:inline-block;">🎯</span>
+                <h2 style="font-size:27px; margin-bottom:8px;">منظومة الأنشطة والبطولات الطلابية</h2>
+                <p class="subtitle" style="font-size:14.5px; max-width:600px; margin:0 auto 28px; line-height:1.7;">
+                    جامعة كفر الشيخ الأهلية — الإدارة العامة لرعاية الطلاب<br>
+                    اختر الخدمة المطلوبة: التسجيل في البطولات القادمة، أو استخراج وتوثيق شهادات المشاركة
                 </p>
+
+                <div class="portal-grid">
+                    <!-- اختيار 1: التسجيل في الأنشطة -->
+                    <div class="portal-card portal-card-activities" onclick="setActivityMode('register')">
+                        <div>
+                            <span class="portal-icon">📝</span>
+                            <div class="portal-title">التسجيل في الأنشطة الطلابية</div>
+                            <p class="portal-desc">
+                                سجّل بياناتك ورغبتك في الانضمام لبطولات دوري الجامعة، كأس الكليات، والمسابقات الفردية والجماعية.
+                            </p>
+                        </div>
+                        <span class="portal-btn portal-btn-emerald">
+                            <span>اختر اللعبة وسجّل الآن</span>
+                            <span>←</span>
+                        </span>
+                    </div>
+
+                    <!-- اختيار 2: شهادات الأنشطة والبطولات -->
+                    <div class="portal-card portal-card-conf" onclick="setActivityMode('certificates')">
+                        <div>
+                            <span class="portal-icon">🎓</span>
+                            <div class="portal-title">شهادات الأنشطة والبطولات</div>
+                            <p class="portal-desc">
+                                استخراج وتوثيق شهادات المشاركة والتقدير المعتمدة لبطولات ومسابقات الجامعة برمز الاستجابة السريعة (QR).
+                            </p>
+                        </div>
+                        <span class="portal-btn portal-btn-gold">
+                            <span>استخراج شهادتي</span>
+                            <span>←</span>
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            <div style="margin-top:28px;">
-                <button class="btn btn-outline" onclick="goToPortal()" style="display:inline-flex;">
-                    🏠 العودة للبوابة الرئيسية
-                </button>
+            <!-- ── STEP 2: اختيار فئة اللعبة (فردية أم زوجية/جماعية) ── -->
+            <div class="act-step" id="act-step-category">
+                <span class="card-icon" style="font-size:50px; margin-bottom:10px; display:inline-block;" id="act-cat-icon">🏅</span>
+                <h2 style="font-size:25px; margin-bottom:6px;" id="act-cat-title">اختر فئة اللعبة</h2>
+                <p class="subtitle" style="font-size:14px; max-width:580px; margin:0 auto 24px; line-height:1.6;" id="act-cat-subtitle">
+                    حدد نوع المنافسة: ألعاب فردية أو ألعاب زوجية وجماعية
+                </p>
+
+                <div class="portal-grid">
+                    <!-- فئة 1: الألعاب الفردية -->
+                    <div class="portal-card portal-card-conf" onclick="setActivityCategory('individual')">
+                        <div>
+                            <span class="portal-icon">🏃‍♂️</span>
+                            <div class="portal-title">الألعاب الفردية</div>
+                            <p class="portal-desc">
+                                تشمل منافسات: الشطرنج، تنس الطاولة (فردي)، الدارتس، الكاراتيه، والملاكمة.
+                            </p>
+                        </div>
+                        <span class="portal-btn portal-btn-gold">
+                            <span>استعراض الألعاب الفردية</span>
+                            <span>←</span>
+                        </span>
+                    </div>
+
+                    <!-- فئة 2: الألعاب الزوجية والجماعية -->
+                    <div class="portal-card portal-card-activities" onclick="setActivityCategory('team')">
+                        <div>
+                            <span class="portal-icon">👥</span>
+                            <div class="portal-title">الألعاب الزوجية والجماعية</div>
+                            <p class="portal-desc">
+                                تشمل منافسات: كرة القدم، كرة السلة، الكرة الطائرة، تنس الطاولة (زوجي)، والدارتس (فرق).
+                            </p>
+                        </div>
+                        <span class="portal-btn portal-btn-emerald">
+                            <span>استعراض الألعاب الجماعية</span>
+                            <span>←</span>
+                        </span>
+                    </div>
+                </div>
             </div>
+
+            <!-- ── STEP 3: شبكة الألعاب في الفئة المختارة ── -->
+            <div class="act-step" id="act-step-games">
+                <span class="card-icon" style="font-size:48px; margin-bottom:8px; display:inline-block;" id="act-games-icon">🎮</span>
+                <h2 style="font-size:24px; margin-bottom:6px;" id="act-games-heading">قائمة الألعاب</h2>
+                <p class="subtitle" style="font-size:14px; max-width:580px; margin:0 auto 20px;" id="act-games-desc">
+                    اختر اللعبة المناسبة للمتابعة
+                </p>
+
+                <div class="act-games-grid" id="act-games-container">
+                    <!-- سيتم حقن كروت الألعاب ديناميكياً بواسطة JavaScript -->
+                </div>
+            </div>
+
+            <!-- ── STEP 4: بطاقة نجاح التسجيل (عند إرسال الطلب بنجاح) ── -->
+            <div class="act-step" id="act-step-success">
+                <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:18px; padding:36px 24px; max-width:550px; margin:0 auto;">
+                    <span style="font-size:60px; display:block; margin-bottom:12px;">🎊</span>
+                    <h2 style="color:#15803d; font-size:24px; margin-bottom:8px;">تم تأكيد تسجيل اشتراكك بنجاح!</h2>
+                    <p style="color:#166534; font-size:14.5px; line-height:1.7; margin-bottom:20px;">
+                        مرحباً <strong id="succ-student-name">---</strong>، تم تسجيل بياناتك بنجاح في بطولة:
+                        <br><strong style="font-size:17px; color:#0c2548;" id="succ-sport-name">---</strong>
+                    </p>
+
+                    <div style="background:white; border:1px dashed #16a34a; border-radius:12px; padding:14px; margin-bottom:20px;">
+                        <span style="font-size:12px; color:#64748b; display:block;">كود التسجيل المرجعي المعتمد:</span>
+                        <strong style="font-size:22px; color:#15803d; letter-spacing:1px;" id="succ-reg-code">REG-2026-0000</strong>
+                    </div>
+
+                    <p style="font-size:13px; color:#475569; margin-bottom:24px; line-height:1.6;">
+                        📲 سيقوم منسق النشاط الرياضي بالتواصل معك عبر الواتساب لإبلاغك بجدول المباريات والقرعة الرسمية.
+                    </p>
+
+                    <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="resetActivityFlowToGames()" style="width:auto; padding:10px 22px; font-size:14px; background:linear-gradient(135deg, #059669 0%, #10b981 100%);">
+                            🔄 تسجيل في بطولة أخرى
+                        </button>
+                        <button class="btn btn-outline" onclick="goToPortal()" style="width:auto; padding:10px 22px; font-size:14px;">
+                            🏠 البوابة الرئيسية
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── MODAL: استمارة التسجيل في النشاط الطلابي ── -->
+    <div id="act-reg-modal" class="act-modal-overlay" onclick="closeActivityRegModal()">
+        <div class="act-modal-content" onclick="event.stopPropagation()">
+            <div class="act-modal-header">
+                <button class="act-modal-close" onclick="closeActivityRegModal()" title="إغلاق">✕</button>
+                <span style="font-size:42px; display:block; margin-bottom:6px;" id="modal-sport-emoji">⚽</span>
+                <h3 style="font-size:21px; color:var(--dark); margin-bottom:4px;" id="modal-sport-title">استمارة التسجيل</h3>
+                <span class="act-crumb-badge" id="modal-sport-badge">---</span>
+            </div>
+
+            <div class="alert alert-error" id="reg-modal-error" style="margin-bottom:14px;"></div>
+
+            <form id="act-reg-form" onsubmit="submitActivityRegistration(event)">
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label class="form-label" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#0c2548;">اسم الطالب الرباعي (كاملاً):</label>
+                    <input type="text" id="reg-name" class="form-input" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;" placeholder="اكتب اسمك الكامل كما هو مسجل بالجامعة..." required>
+                </div>
+
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label class="form-label" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#0c2548;">الكلية:</label>
+                    <select id="reg-faculty" class="form-select" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;" required>
+                        <option value="" disabled selected>اختر كليتك...</option>
+                        <option value="كلية الطب البشري">كلية الطب البشري</option>
+                        <option value="كلية طب الفم والأسنان">كلية طب الفم والأسنان</option>
+                        <option value="كلية العلاج الطبيعي">كلية العلاج الطبيعي</option>
+                        <option value="كلية الصيدلة">كلية الصيدلة</option>
+                        <option value="كلية التمريض">كلية التمريض</option>
+                        <option value="كلية الطب البيطري">كلية الطب البيطري</option>
+                        <option value="كلية الزراعة">كلية الزراعة</option>
+                        <option value="كلية الهندسة">كلية الهندسة</option>
+                        <option value="كلية الحاسبات والمعلومات والذكاء الاصطناعي">كلية الحاسبات والمعلومات والذكاء الاصطناعي</option>
+                        <option value="كلية العلوم">كلية العلوم</option>
+                        <option value="كلية اللغات والعلوم الإنسانية">كلية اللغات والعلوم الإنسانية</option>
+                        <option value="كلية الأعمال">كلية الأعمال</option>
+                        <option value="كلية الفنون والتصميم">كلية الفنون والتصميم</option>
+                    </select>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                    <div class="form-group">
+                        <label class="form-label" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#0c2548;">الفرقة الدراسية:</label>
+                        <select id="reg-year" class="form-select" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;" required>
+                            <option value="الفرقة الأولى">الفرقة الأولى</option>
+                            <option value="الفرقة الثانية">الفرقة الثانية</option>
+                            <option value="الفرقة الثالثة">الفرقة الثالثة</option>
+                            <option value="الفرقة الرابعة">الفرقة الرابعة</option>
+                            <option value="الفرقة الخامسة">الفرقة الخامسة</option>
+                            <option value="إعدادي">إعدادي</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#0c2548;">رقم الهاتف / الواتساب:</label>
+                        <input type="tel" id="reg-phone" class="form-input" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;" placeholder="01xxxxxxxxx" required dir="ltr">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label class="form-label" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#0c2548;">الرقم القومي أو رقم الكارنيه (اختياري للتوثيق):</label>
+                    <input type="text" id="reg-id" class="form-input" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;" placeholder="أدخل الرقم القومي أو رقم الكارنيه..." dir="ltr">
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="reg-submit-btn" style="width:100%; background:linear-gradient(135deg, #059669 0%, #10b981 100%);">
+                    <span id="reg-btn-text">✅ إرسال طلب الاشتراك في البطولة</span>
+                    <span id="reg-btn-spinner" style="display:none;"><span class="spinner"></span></span>
+                </button>
+            </form>
         </div>
     </div>
 
@@ -1676,11 +2005,13 @@
         currentConfName   = confName;
 
         // تطبيق السمة اللونية الخاصة بالمؤتمر المختار
-        document.body.classList.remove('theme-ai', 'theme-accounting');
+        document.body.classList.remove('theme-ai', 'theme-accounting', 'theme-sport');
         if (confId === 'ai_emergency') {
             document.body.classList.add('theme-ai');
         } else if (confId === 'accounting') {
             document.body.classList.add('theme-accounting');
+        } else if (confId && confId.startsWith('sport_')) {
+            document.body.classList.add('theme-sport');
         }
 
         // تحديث الهيدر
@@ -1741,12 +2072,263 @@
         document.body.classList.remove('theme-ai', 'theme-accounting');
         document.getElementById('header-conf-name').textContent = 'قطاع الأنشطة الطلابية والخدمات الجامعية';
         document.getElementById('footer-conf-name').textContent = 'قطاع الأنشطة الطلابية — جامعة كفر الشيخ الأهلية';
+        activityMode = '';
+        activityCategory = '';
+        updateActivityBreadcrumb();
+        showActivityStep('act-step-mode');
         showScreen('screen-activities');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // ── Go Home (العودة لاختيار المؤتمرات) ──
+    // ── Student Activities State & Controller ──
+    let activityMode = '';      // 'register' | 'certificates'
+    let activityCategory = '';  // 'individual' | 'team'
+    let selectedSportForReg = null;
+
+    const SPORTS_DATA = {
+        individual: [
+            { id: 'sport_chess', name: 'بطولة الشطرنج', emoji: '♟️', desc: 'منافسات التفكير الاستراتيجي والذكاء' },
+            { id: 'sport_table_tennis_single', name: 'تنس الطاولة (فردي)', emoji: '🏓', desc: 'بطولة الفردي لطلبة وطالبات الجامعة' },
+            { id: 'sport_darts_single', name: 'الدارتس (فردي)', emoji: '🎯', desc: 'مسابقة دقة التصويب وتصويب السهام' },
+            { id: 'sport_karate', name: 'بطولة الكاراتيه', emoji: '🥋', desc: 'منافسات الكاتا والكوميتيه القتالية' },
+            { id: 'sport_boxing', name: 'بطولة الملاكمة', emoji: '🥊', desc: 'بطولة الملاكمة للأوزان المختلفة' }
+        ],
+        team: [
+            { id: 'sport_football', name: 'دوري كرة القدم', emoji: '⚽', desc: 'دوري كليات الجامعة والبطولة الكبرى' },
+            { id: 'sport_basketball', name: 'دوري كرة السلة', emoji: '🏀', desc: 'بطولة كرة السلة لفرق الكليات' },
+            { id: 'sport_volleyball', name: 'دوري الكرة الطائرة', emoji: '🏐', desc: 'منافسات الكرة الطائرة الحماسية' },
+            { id: 'sport_table_tennis_double', name: 'تنس الطاولة (زوجي)', emoji: '🏓', desc: 'بطولة الفرق والزوجي لتنس الطاولة' },
+            { id: 'sport_darts_double', name: 'الدارتس (زوجي فرق)', emoji: '🎯', desc: 'منافسات الدارتس بنظام الفرق والزوجي' }
+        ]
+    };
+
+    function showActivityStep(stepId) {
+        document.querySelectorAll('.act-step').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(stepId);
+        if (target) target.classList.add('active');
+        window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    function updateActivityBreadcrumb() {
+        const textEl = document.getElementById('act-crumb-text');
+        const backEl = document.getElementById('act-back-btn');
+
+        if (!activityMode) {
+            textEl.textContent = 'قطاع الأنشطة الطلابية والبطولات';
+            backEl.textContent = '➤ العودة للبوابة الرئيسية';
+            backEl.onclick = goToPortal;
+        } else if (!activityCategory) {
+            const modeText = activityMode === 'register' ? '📝 التسجيل في الأنشطة' : '🎓 شهادات الأنشطة والبطولات';
+            textEl.textContent = `الأنشطة الطلابية / ${modeText}`;
+            backEl.textContent = '➤ العودة لاختيار الخدمة';
+            backEl.onclick = () => actGoBackToStep(1);
+        } else {
+            const modeText = activityMode === 'register' ? '📝 التسجيل' : '🎓 الشهادات';
+            const catText = activityCategory === 'individual' ? '🏃 الألعاب الفردية' : '👥 الألعاب الزوجية والجماعية';
+            textEl.textContent = `${modeText} / ${catText}`;
+            backEl.textContent = '➤ العودة لاختيار الفئة';
+            backEl.onclick = () => actGoBackToStep(2);
+        }
+    }
+
+    function setActivityMode(mode) {
+        activityMode = mode;
+        activityCategory = '';
+
+        const catTitle = document.getElementById('act-cat-title');
+        const catSubtitle = document.getElementById('act-cat-subtitle');
+        const catIcon = document.getElementById('act-cat-icon');
+
+        if (mode === 'register') {
+            catIcon.textContent = '📝';
+            catTitle.textContent = 'التسجيل في الأنشطة — اختر الفئة';
+            catSubtitle.textContent = 'اختر فئة اللعبة التي ترغب في الاشتراك بها لتسجيل بياناتك';
+        } else {
+            catIcon.textContent = '🎓';
+            catTitle.textContent = 'شهادات الأنشطة — اختر الفئة';
+            catSubtitle.textContent = 'اختر فئة اللعبة التي شاركت بها لاستخراج وتوثيق شهادتك المعتمدة';
+        }
+
+        updateActivityBreadcrumb();
+        showActivityStep('act-step-category');
+    }
+
+    function setActivityCategory(category) {
+        activityCategory = category;
+
+        const heading = document.getElementById('act-games-heading');
+        const desc = document.getElementById('act-games-desc');
+        const icon = document.getElementById('act-games-icon');
+        const container = document.getElementById('act-games-container');
+
+        const catName = category === 'individual' ? 'الألعاب الفردية' : 'الألعاب الزوجية والجماعية';
+        icon.textContent = category === 'individual' ? '🏃‍♂️' : '👥';
+        heading.textContent = `قائمة ${catName}`;
+
+        if (activityMode === 'register') {
+            desc.textContent = `اختر اللعبة المناسبة لتسجيل اشتراكك فوراً في منافسات ${catName}`;
+        } else {
+            desc.textContent = `اختر اللعبة لاستخراج وتوثيق شهادتك الرسمية في منافسات ${catName}`;
+        }
+
+        // بناء كروت الألعاب
+        const sports = SPORTS_DATA[category] || [];
+        container.innerHTML = sports.map(sp => {
+            const btnClass = activityMode === 'register' ? 'game-btn-register' : 'game-btn-cert';
+            const btnText = activityMode === 'register' ? '📝 تسجيل الاشتراك' : '🔍 استخراج الشهادة';
+            const catBadge = category === 'individual' ? 'فردي' : 'زوجي وجماعي';
+
+            return `
+                <div class="act-game-card">
+                    <div>
+                        <span class="game-emoji">${sp.emoji}</span>
+                        <div class="game-title">${sp.name}</div>
+                        <div class="game-meta">
+                            <span style="background:#f1f5f9; padding:2px 8px; border-radius:10px; font-weight:600;">${catBadge}</span>
+                            <div style="margin-top:6px; font-size:12px; color:#64748b;">${sp.desc}</div>
+                        </div>
+                    </div>
+                    <button class="game-btn ${btnClass}" onclick="handleSportAction('${sp.id}', '${sp.name}', '${sp.emoji}', '${category}')">
+                        ${btnText}
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        updateActivityBreadcrumb();
+        showActivityStep('act-step-games');
+    }
+
+    function actGoBackToStep(step) {
+        if (step === 1) {
+            activityCategory = '';
+            updateActivityBreadcrumb();
+            showActivityStep('act-step-mode');
+        } else if (step === 2) {
+            updateActivityBreadcrumb();
+            showActivityStep('act-step-category');
+        }
+    }
+
+    function actGoBack() {
+        if (activityCategory) {
+            actGoBackToStep(2);
+        } else if (activityMode) {
+            actGoBackToStep(1);
+        } else {
+            goToPortal();
+        }
+    }
+
+    function handleSportAction(sportId, sportName, sportEmoji, category) {
+        if (activityMode === 'certificates') {
+            // مسار الشهادات: يفتح شاشة البحث عن الشهادة الخاصة باللعبة مباشرة
+            selectConference(sportId, sportName);
+        } else {
+            // مسار التسجيل: يفتح استمارة التسجيل
+            openActivityRegModal(sportId, sportName, sportEmoji, category);
+        }
+    }
+
+    function openActivityRegModal(sportId, sportName, sportEmoji, category) {
+        selectedSportForReg = { id: sportId, name: sportName, emoji: sportEmoji, category: category };
+        document.getElementById('modal-sport-emoji').textContent = sportEmoji;
+        document.getElementById('modal-sport-title').textContent = `التسجيل في: ${sportName}`;
+        document.getElementById('modal-sport-badge').textContent = category === 'individual' ? '🏃 ألعاب فردية' : '👥 ألعاب جماعية وزوجية';
+        document.getElementById('reg-modal-error').style.display = 'none';
+
+        // ملء الاسم والكلية تلقائياً إن وجدا من بحث سابق
+        if (confirmedName && !document.getElementById('reg-name').value) {
+            document.getElementById('reg-name').value = confirmedName;
+        }
+        if (confirmedFaculty && !document.getElementById('reg-faculty').value) {
+            document.getElementById('reg-faculty').value = confirmedFaculty;
+        }
+
+        document.getElementById('act-reg-modal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeActivityRegModal() {
+        document.getElementById('act-reg-modal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    async function submitActivityRegistration(e) {
+        e.preventDefault();
+        if (!selectedSportForReg) return;
+
+        const name = document.getElementById('reg-name').value.trim();
+        const faculty = document.getElementById('reg-faculty').value;
+        const year = document.getElementById('reg-year').value;
+        const phone = document.getElementById('reg-phone').value.trim();
+        const studentId = document.getElementById('reg-id').value.trim();
+        const errBox = document.getElementById('reg-modal-error');
+
+        if (!name || !faculty || !phone) {
+            errBox.textContent = 'يرجى ملء جميع الحقول المطلوبة (الاسم، الكلية، ورقم الهاتف)';
+            errBox.style.display = 'block';
+            return;
+        }
+
+        const btn = document.getElementById('reg-submit-btn');
+        btn.disabled = true;
+        document.getElementById('reg-btn-text').style.display = 'none';
+        document.getElementById('reg-btn-spinner').style.display = '';
+        errBox.style.display = 'none';
+
+        try {
+            const res = await fetch('/api/activity/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    faculty,
+                    year,
+                    phone,
+                    student_id: studentId,
+                    sport_id: selectedSportForReg.id,
+                    sport_name: selectedSportForReg.name,
+                    category: selectedSportForReg.category
+                })
+            });
+
+            const data = await res.json();
+            if (data.status === 'ok') {
+                closeActivityRegModal();
+
+                document.getElementById('succ-student-name').textContent = data.student_name;
+                document.getElementById('succ-sport-name').textContent = data.sport_name;
+                document.getElementById('succ-reg-code').textContent = data.reg_code;
+
+                showActivityStep('act-step-success');
+                launchConfetti();
+            } else {
+                errBox.textContent = data.message || 'حدث خطأ أثناء التسجيل';
+                errBox.style.display = 'block';
+            }
+        } catch {
+            errBox.textContent = 'خطأ في الاتصال بالخادم، يرجى المحاولة لاحقاً';
+            errBox.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            document.getElementById('reg-btn-text').style.display = '';
+            document.getElementById('reg-btn-spinner').style.display = 'none';
+        }
+    }
+
+    function resetActivityFlowToGames() {
+        if (activityCategory) {
+            setActivityCategory(activityCategory);
+        } else {
+            showActivityStep('act-step-mode');
+        }
+    }
+
+    // ── Go Home (العودة لاختيار المؤتمرات أو الألعاب) ──
     function goHome() {
+        const wasSport = currentConference && currentConference.startsWith('sport_');
+
         confirmedName = '';
         confirmedFaculty = '';
         confirmedEmail = '';
@@ -1768,12 +2350,19 @@
         if (enBtn) enBtn.classList.remove('active');
 
         // إعادة ضبط السمة اللونية للوضع الافتراضي
-        document.body.classList.remove('theme-ai', 'theme-accounting');
+        document.body.classList.remove('theme-ai', 'theme-accounting', 'theme-sport');
 
-        document.getElementById('header-conf-name').textContent = 'منصة إصدار الشهادات الإلكترونية';
-        document.getElementById('footer-conf-name').textContent = 'منصة إصدار الشهادات الإلكترونية — جامعة كفر الشيخ الأهلية';
-        showScreen('screen-home');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (wasSport) {
+            openActivities();
+            if (activityCategory) {
+                setActivityCategory(activityCategory);
+            }
+        } else {
+            document.getElementById('header-conf-name').textContent = 'منصة إصدار الشهادات الإلكترونية';
+            document.getElementById('footer-conf-name').textContent = 'منصة إصدار الشهادات الإلكترونية — جامعة كفر الشيخ الأهلية';
+            showScreen('screen-home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     }
 
     // ── Clear search fields only ──
