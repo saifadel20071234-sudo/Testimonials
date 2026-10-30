@@ -1761,13 +1761,13 @@
         <div class="card">
 
             <!-- زر العودة -->
-            <div class="back-to-home" onclick="goHome()">
+            <div class="back-to-home" id="search-back-btn" onclick="goHome()">
                 ➤ العودة لاختيار المؤتمر
             </div>
 
             <!-- badge المؤتمر المختار -->
             <div class="selected-conf-badge" id="selected-conf-badge">
-                🎓 <span id="selected-conf-text">---</span>
+                <span id="selected-conf-icon">🎓</span> <span id="selected-conf-text">---</span>
             </div>
 
             <span class="card-icon">📜</span>
@@ -2018,8 +2018,17 @@
         document.getElementById('header-conf-name').textContent  = confName;
         document.getElementById('footer-conf-name').textContent  = confName;
 
-        // تحديث badge في شاشة البحث
+        // تحديث badge وزر العودة في شاشة البحث
         document.getElementById('selected-conf-text').textContent = confName;
+        const iconEl = document.getElementById('selected-conf-icon');
+        const backEl = document.getElementById('search-back-btn');
+        if (confId && confId.startsWith('sport_')) {
+            if (iconEl) iconEl.textContent = '🏆';
+            if (backEl) backEl.innerHTML = '➤ العودة لقائمة بطولات الأنشطة الطلابية';
+        } else {
+            if (iconEl) iconEl.textContent = '🎓';
+            if (backEl) backEl.innerHTML = '➤ العودة لاختيار المؤتمر';
+        }
 
         // الانتقال لشاشة البحث
         showScreen('screen-search');

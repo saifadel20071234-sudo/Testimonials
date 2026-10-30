@@ -609,10 +609,24 @@
                 <div id="add-alert" style="display:none;" class="alert-box"></div>
 
                 <div class="form-group">
-                    <label class="form-label">المؤتمر:</label>
+                    <label class="form-label">المؤتمر أو البطولة:</label>
                     <select id="add-conf" class="form-select">
-                        <option value="ai_emergency">مؤتمر الذكاء الاصطناعي في الطوارئ</option>
-                        <option value="accounting">مؤتمر المحاسبة والإدارة المالية</option>
+                        <optgroup label="المؤتمرات الجامعية">
+                            <option value="ai_emergency">مؤتمر الذكاء الاصطناعي في الطوارئ</option>
+                            <option value="accounting">مؤتمر المحاسبة والإدارة المالية</option>
+                        </optgroup>
+                        <optgroup label="البطولات والأنشطة الرياضية">
+                            <option value="sport_football">دوري كرة القدم</option>
+                            <option value="sport_basketball">دوري كرة السلة</option>
+                            <option value="sport_volleyball">دوري الكرة الطائرة</option>
+                            <option value="sport_chess">بطولة الشطرنج</option>
+                            <option value="sport_table_tennis_single">تنس الطاولة (فردي)</option>
+                            <option value="sport_table_tennis_double">تنس الطاولة (زوجي)</option>
+                            <option value="sport_darts_single">الدارتس (فردي)</option>
+                            <option value="sport_darts_double">الدارتس (زوجي فرق)</option>
+                            <option value="sport_karate">بطولة الكاراتيه</option>
+                            <option value="sport_boxing">بطولة الملاكمة</option>
+                        </optgroup>
                     </select>
                 </div>
 
@@ -637,10 +651,24 @@
                 </p>
 
                 <div class="form-group">
-                    <label class="form-label">اختر المؤتمر المستهدف:</label>
+                    <label class="form-label">اختر المؤتمر أو البطولة المستهدفة:</label>
                     <select id="upload-conf" class="form-select">
-                        <option value="ai_emergency">مؤتمر الذكاء الاصطناعي</option>
-                        <option value="accounting">مؤتمر المحاسبة</option>
+                        <optgroup label="المؤتمرات الجامعية">
+                            <option value="ai_emergency">مؤتمر الذكاء الاصطناعي</option>
+                            <option value="accounting">مؤتمر المحاسبة والإدارة</option>
+                        </optgroup>
+                        <optgroup label="البطولات والأنشطة الرياضية">
+                            <option value="sport_football">دوري كرة القدم</option>
+                            <option value="sport_basketball">دوري كرة السلة</option>
+                            <option value="sport_volleyball">دوري الكرة الطائرة</option>
+                            <option value="sport_chess">بطولة الشطرنج</option>
+                            <option value="sport_table_tennis_single">تنس الطاولة (فردي)</option>
+                            <option value="sport_table_tennis_double">تنس الطاولة (زوجي)</option>
+                            <option value="sport_darts_single">الدارتس (فردي)</option>
+                            <option value="sport_darts_double">الدارتس (زوجي فرق)</option>
+                            <option value="sport_karate">بطولة الكاراتيه</option>
+                            <option value="sport_boxing">بطولة الملاكمة</option>
+                        </optgroup>
                     </select>
                 </div>
 
@@ -651,6 +679,77 @@
 
                 <button class="btn-primary" style="background:#107c41;" onclick="submitUploadExcel()">رفع وتحديث القائمة</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ═══ قسم مسجلي الأنشطة والبطولات الطلابية ═══ -->
+    <div class="panel-card" style="margin-top: 30px;">
+        <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+            <div>
+                <h3 style="display:flex; align-items:center; gap:8px;">
+                    <span>🏆</span> سجلات المشتركين في الأنشطة والبطولات الطلابية
+                </h3>
+                <p style="font-size:12.5px; color:var(--text-muted); margin-top:4px;">
+                    البيانات المسجلة مباشرة من استمارات الطلاب للبطولات القادمة
+                </p>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span class="badge-role badge-org" style="font-size:12px; padding:6px 14px; border-radius:20px;">
+                    إجمالي المسجلين: {{ total_registrations }} طالب
+                </span>
+                <a href="/admin/download_registrations_excel" class="btn-action" style="background:#107c41; color:white; font-size:13px; padding:8px 18px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-weight:700;">
+                    📥 تحميل شيت المسجلين Excel (.xlsx)
+                </a>
+            </div>
+        </div>
+
+        <div class="search-bar" style="margin-top: 16px;">
+            <input type="text" id="reg-filter-input" class="search-input" placeholder="🔍 ابحث بالاسم، الكلية، اللعبة، أو الرقم القومي..." onkeyup="filterRegistrations()">
+        </div>
+
+        <div class="table-responsive">
+            <table id="registrations-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>كود التسجيل</th>
+                        <th>اسم الطالب</th>
+                        <th>الرقم القومي / الكارنيه</th>
+                        <th>الكلية</th>
+                        <th>الفرقة</th>
+                        <th>البطولة / اللعبة</th>
+                        <th>رقم الهاتف / الواتساب</th>
+                        <th>وقت التسجيل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if activity_registrations %}
+                        {% for r in activity_registrations %}
+                        <tr data-search="{{ (r.name ~ ' ' ~ r.faculty ~ ' ' ~ r.sport_name ~ ' ' ~ r.student_id ~ ' ' ~ r.reg_code) | lower }}">
+                            <td>{{ loop.index }}</td>
+                            <td><strong style="color:#059669; letter-spacing:0.5px;">{{ r.reg_code }}</strong></td>
+                            <td><strong>{{ r.name }}</strong></td>
+                            <td dir="ltr" style="text-align:right;">{{ r.student_id or '—' }}</td>
+                            <td><span style="font-size:12px; color:var(--navy-dark); font-weight:600;">{{ r.faculty }}</span></td>
+                            <td>{{ r.year or '—' }}</td>
+                            <td>
+                                <span class="badge-role badge-org" style="font-size:11.5px;">
+                                    {{ r.sport_name }}
+                                </span>
+                            </td>
+                            <td dir="ltr" style="text-align:right;"><a href="https://wa.me/2{{ r.phone }}" target="_blank" style="color:#059669; text-decoration:none; font-weight:600;">{{ r.phone }}</a></td>
+                            <td style="font-size:12px; color:var(--text-muted);">{{ r.timestamp }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" style="text-align:center; padding:28px; color:var(--text-muted);">
+                                لا توجد تسجيلات حتى الآن. سيظهر الطلاب فور تسجيلهم في بطولات الألعاب الرياضية.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
     </div>
 {% endif %}
@@ -766,6 +865,20 @@
             alertBox.textContent = 'خطأ في الاتصال أثناء رفع الملف';
             alertBox.style.display = 'block';
         }
+    }
+
+    // ── تصفية مسجلي الأنشطة والبطولات ──
+    function filterRegistrations() {
+        const query = (document.getElementById('reg-filter-input')?.value || '').toLowerCase().trim();
+        const rows = document.querySelectorAll('#registrations-table tbody tr');
+        rows.forEach(row => {
+            const searchData = (row.getAttribute('data-search') || '').toLowerCase();
+            if (!query || searchData.includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
     }
 </script>
 

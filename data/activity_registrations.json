@@ -1,0 +1,15 @@
+[
+  {
+    "reg_code": "REG-2026-4763",
+    "name": "أحمد محمد إبراهيم",
+    "faculty": "كلية الهندسة",
+    "year": "الفرقة الثالثة",
+    "phone": "01012345678",
+    "student_id": "30101010101010",
+    "sport_id": "sport_football",
+    "sport_name": "دوري كرة القدم",
+    "category": "team",
+    "timestamp": "2026-10-30 19:15:54",
+    "status": "confirmed"
+  }
+]

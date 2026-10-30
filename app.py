@@ -362,6 +362,23 @@ def normalize_arabic(text: str) -> str:
 _STUDENTS_CACHE = {}
 _STUDENTS_ROLES = {}
 
+DEFAULT_SPORTS_STUDENTS = [
+    ('أحمد محمد إبراهيم', 'مشارك'),
+    ('محمد أحمد علي', 'مشارك'),
+    ('أحمد محمد', 'مشارك'),
+    ('محمد أحمد', 'مشارك'),
+    ('سيف الإسلام عادل', 'منظم'),
+    ('زياد أسعد', 'منظم'),
+    ('محمود حسن علي', 'مشارك'),
+    ('عمر خالد يوسف', 'مشارك'),
+    ('كريم عبد الله مصطفى', 'مشارك'),
+    ('نور الدين طارق', 'منظم'),
+    ('يوسف إبراهيم خليل', 'مشارك'),
+    ('حسام الدين محمود', 'مشارك'),
+    ('عبد الرحمن طارق', 'مشارك'),
+    ('علي حسن كمال', 'مشارك'),
+]
+
 def get_student_role(conference_id: str, student_name: str) -> str:
     norm = normalize_arabic(student_name)
     return _STUDENTS_ROLES.get(conference_id, {}).get(norm, 'attendee')
@@ -377,6 +394,28 @@ def load_students(conference_id: str, force_reload: bool = False) -> dict:
 
     excel_path = conf['excel']
     if not os.path.exists(excel_path):
+        if conference_id.startswith('sport_'):
+            # إنشاء ملف إكسيل تجريبي للبطولة بالأسماء الافتراضية للتجربة المباشرة
+            try:
+                wb_new = openpyxl.Workbook()
+                ws_new = wb_new.active
+                ws_new.append(['الاسم', 'الصفة'])
+                for s_name, s_role in DEFAULT_SPORTS_STUDENTS:
+                    ws_new.append([s_name, s_role])
+                    norm = normalize_arabic(s_name)
+                    students[norm] = s_name
+                    _STUDENTS_ROLES.setdefault(conference_id, {})[norm] = 'organizer' if s_role == 'منظم' else 'attendee'
+                wb_new.save(excel_path)
+                wb_new.close()
+                _STUDENTS_CACHE[conference_id] = students
+                return students
+            except Exception as e:
+                for s_name, s_role in DEFAULT_SPORTS_STUDENTS:
+                    norm = normalize_arabic(s_name)
+                    students[norm] = s_name
+                    _STUDENTS_ROLES.setdefault(conference_id, {})[norm] = 'organizer' if s_role == 'منظم' else 'attendee'
+                _STUDENTS_CACHE[conference_id] = students
+                return students
         return students
 
     try:
@@ -660,6 +699,8 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
     qr_w, qr_h = qr_img.size
     img.paste(qr_img, (w // 2 - qr_w // 2, 1315))
 
+    is_sport = conference_id.startswith('sport_')
+
     if lang == 'en':
         # ── English Certificate Version ──
         display_en = name_en.strip() if name_en and name_en.strip() else student_name
@@ -668,11 +709,22 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
         fac_en = FACULTIES_EN.get(fac_text, f"Faculty of {fac_text.replace('كلية ', '')}")
         draw_centered_en(fac_en, 690, f_faculty, C_BLUE, max_w=1800)
 
-        # صيغة التقدير بالإنجليزية (منظم vs مشارك)
-        if role == 'organizer':
-            apprec_en = 'In recognition of distinguished efforts and dedication in organizing and contributing to the success of:'
+        # صيغة التقدير بالإنجليزية (منظم vs مشارك - بطولة vs مؤتمر)
+        if is_sport:
+            if role == 'organizer':
+                apprec_en = 'In recognition of outstanding dedication and leadership in organizing the sports tournament:'
+            else:
+                apprec_en = 'In recognition of active athletic participation and outstanding sportsmanship in the tournament of:'
+            wish_en = 'Wishing continued athletic excellence, sportsmanship, and top achievements'
+            footer_badge_en = '• Official Sports Championship Certificate — Youth Care •'
         else:
-            apprec_en = 'In recognition of active participation and distinguished contribution to the events of:'
+            if role == 'organizer':
+                apprec_en = 'In recognition of distinguished efforts and dedication in organizing and contributing to the success of:'
+            else:
+                apprec_en = 'In recognition of active participation and distinguished contribution to the events of:'
+            wish_en = 'Wishing continued excellence, distinguished success, and leadership'
+            footer_badge_en = '• Official University Accredited Certificate •'
+
         draw_centered_en(apprec_en, 765, f_apprec, C_GRAY, max_w=2000)
 
         conf_en = conf.get('name_en', conf_name)
@@ -682,11 +734,11 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
         draw_centered_en(conf_en, 840, f_conf, c_conf, max_w=2000)
         draw_centered_en(slogan_en, 915, f_slogan, c_slogan, max_w=2000)
 
-        draw_centered_en('Wishing continued excellence, distinguished success, and leadership', 980, f_wish, C_GRAY, max_w=2000)
+        draw_centered_en(wish_en, 980, f_wish, C_GRAY, max_w=2000)
 
         draw_centered_en('Scan QR Code for Official Verification', 1492, f_serial, C_NAVY_DARK)
         draw_centered_en(f'Serial No: {cert_id}', 1522, f_serial, C_BLUE)
-        draw_centered_en('• Official University Accredited Certificate •', 1552, f_serial, (22, 130, 60))
+        draw_centered_en(footer_badge_en, 1552, f_serial, (22, 130, 60))
 
     else:
         # ── Arabic Certificate Version ──
@@ -695,11 +747,22 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
 
         draw_centered(fac_text, 690, f_faculty, C_BLUE, max_w=1800)
 
-        # صيغة التقدير بالعربية (منظم vs مشارك)
-        if role == 'organizer':
-            apprec_ar = 'تقديراً لجهوده المتميزة ومشاركته الفعالة في تنظيم وإنجاح فعاليات:'
+        # صيغة التقدير بالعربية (منظم vs مشارك - بطولة vs مؤتمر)
+        if is_sport:
+            if role == 'organizer':
+                apprec_ar = 'تقديراً لجهوده المتميزة وتفانيه في تنظيم وإنجاح فعاليات بطولة:'
+            else:
+                apprec_ar = 'تقديراً لمشاركته المتميزة وتألقه الرياضي والتحلي بالروح الرياضية في فعاليات بطولة:'
+            wish_ar = 'متمنين له دوام التوفيق والتميز الرياضي وإحراز المراكز المتقدمة'
+            footer_badge_ar = '• شهادة بطولة رياضية معتمدة ومسجلة برعاية الطلاب بالجامعة •'
         else:
-            apprec_ar = 'تقديراً لمشاركته الفعالة وجهوده المتميزة في خدمة المنظومة الطلابية وإنجاح فعاليات:'
+            if role == 'organizer':
+                apprec_ar = 'تقديراً لجهوده المتميزة ومشاركته الفعالة في تنظيم وإنجاح فعاليات:'
+            else:
+                apprec_ar = 'تقديراً لمشاركته الفعالة وجهوده المتميزة في خدمة المنظومة الطلابية وإنجاح فعاليات:'
+            wish_ar = 'متمنين له دوام التوفيق والتميز والنجاح المستمر'
+            footer_badge_ar = '• شهادة رسمية معتمدة ومسجلة بسجلات الجامعة •'
+
         draw_centered(apprec_ar, 765, f_apprec, C_GRAY, max_w=2000)
 
         c_conf   = conf.get('conf_color', C_NAVY_DARK)
@@ -707,11 +770,11 @@ def render_certificate_image(student_name: str, faculty: str, conference_id: str
         draw_centered(conf_name, 840, f_conf, c_conf, max_w=2000)
         draw_centered(conf_slogan, 915, f_slogan, c_slogan, max_w=2000)
 
-        draw_centered('متمنين له دوام التوفيق والتميز والنجاح المستمر', 980, f_wish, C_GRAY, max_w=2000)
+        draw_centered(wish_ar, 980, f_wish, C_GRAY, max_w=2000)
 
         draw_centered('امسح الباركود للتحقق من صحة الشهادة', 1492, f_serial, C_NAVY_DARK)
         draw_centered(f'رقم التوثيق: {cert_id}', 1522, f_serial, C_BLUE)
-        draw_centered('• شهادة رسمية معتمدة ومسجلة بسجلات الجامعة •', 1552, f_serial, (22, 130, 60))
+        draw_centered(footer_badge_ar, 1552, f_serial, (22, 130, 60))
 
     return img
 
@@ -982,6 +1045,9 @@ def admin_dashboard():
     students_ai_list = [{'name': name, 'role': get_student_role('ai_emergency', name)} for name in students_ai.values()]
     students_acc_list = [{'name': name, 'role': get_student_role('accounting', name)} for name in students_acc.values()]
 
+    activity_registrations = load_activity_registrations()
+    total_registrations = len(activity_registrations)
+
     return render_template(
         'admin.html',
         is_authenticated=True,
@@ -995,7 +1061,9 @@ def admin_dashboard():
         total_att=total_att,
         sorted_faculties=sorted_faculties,
         students_ai=students_ai_list,
-        students_acc=students_acc_list
+        students_acc=students_acc_list,
+        activity_registrations=activity_registrations,
+        total_registrations=total_registrations
     )
 
 
@@ -1103,6 +1171,7 @@ def admin_upload_excel():
 #  نظام التسجيل في الأنشطة الطلابية
 # ─────────────────────────────────────────
 REGISTRATIONS_FILE = os.path.join(BASE_DIR, 'data', 'activity_registrations.json')
+ACTIVITIES_EXCEL_PATH = os.path.join(BASE_DIR, 'data', 'activity_registrations.xlsx')
 
 def load_activity_registrations() -> list:
     if os.path.exists(REGISTRATIONS_FILE):
@@ -1113,6 +1182,76 @@ def load_activity_registrations() -> list:
             return []
     return []
 
+def append_registration_to_excel(record: dict):
+    if not record:
+        return
+    try:
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from openpyxl.utils import get_column_letter
+
+        if not os.path.exists(ACTIVITIES_EXCEL_PATH):
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "مسجلي الأنشطة والبطولات"
+            ws.views.sheetView[0].rightToLeft = True
+
+            headers = [
+                'كود التسجيل',
+                'اسم الطالب',
+                'الرقم القومي / الكارنيه',
+                'الكلية',
+                'الفرقة الدراسية',
+                'رقم الهاتف / الواتساب',
+                'البطولة / اللعبة',
+                'تصنيف اللعبة',
+                'تاريخ ووقت التسجيل'
+            ]
+            ws.append(headers)
+
+            h_font = Font(name='Arial', size=11, bold=True, color='FFFFFF')
+            h_fill = PatternFill(start_color='0C2548', end_color='0C2548', fill_type='solid')
+            for col_idx in range(1, len(headers) + 1):
+                c = ws.cell(row=1, column=col_idx)
+                c.font = h_font
+                c.fill = h_fill
+                c.alignment = Alignment(horizontal='center', vertical='center')
+        else:
+            wb = openpyxl.load_workbook(ACTIVITIES_EXCEL_PATH)
+            ws = wb.active
+
+        cat_display = 'ألعاب فردية' if record.get('category') == 'individual' else 'ألعاب زوجية وجماعية'
+        row_data = [
+            record.get('reg_code', ''),
+            record.get('name', ''),
+            record.get('student_id', ''),
+            record.get('faculty', ''),
+            record.get('year', ''),
+            record.get('phone', ''),
+            record.get('sport_name', ''),
+            cat_display,
+            record.get('timestamp', '')
+        ]
+        ws.append(row_data)
+
+        r_idx = ws.max_row
+        r_fill = PatternFill(start_color='F8FAFC', end_color='F8FAFC', fill_type='solid') if r_idx % 2 == 0 else PatternFill(fill_type=None)
+        for col_idx in range(1, len(row_data) + 1):
+            c = ws.cell(row=r_idx, column=col_idx)
+            c.font = Font(name='Arial', size=10)
+            c.alignment = Alignment(horizontal='center', vertical='center')
+            if r_idx % 2 == 0:
+                c.fill = r_fill
+
+        for col in ws.columns:
+            max_len = max(len(str(c.value or '')) for c in col)
+            col_letter = get_column_letter(col[0].column)
+            ws.column_dimensions[col_letter].width = max(max_len + 5, 14)
+
+        wb.save(ACTIVITIES_EXCEL_PATH)
+        wb.close()
+    except Exception as e:
+        print(f"Error appending to activities excel: {e}")
+
 def save_activity_registration(record: dict):
     records = load_activity_registrations()
     records.append(record)
@@ -1120,7 +1259,42 @@ def save_activity_registration(record: dict):
         with open(REGISTRATIONS_FILE, 'w', encoding='utf-8') as f:
             json.dump(records, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        print(f"Error saving registration: {e}")
+        print(f"Error saving registration json: {e}")
+
+    append_registration_to_excel(record)
+
+@app.route('/admin/download_registrations_excel')
+def admin_download_registrations_excel():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_dashboard'))
+
+    if not os.path.exists(ACTIVITIES_EXCEL_PATH):
+        try:
+            from openpyxl.styles import Font, PatternFill, Alignment
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "مسجلي الأنشطة والبطولات"
+            ws.views.sheetView[0].rightToLeft = True
+            headers = ['كود التسجيل', 'اسم الطالب', 'الرقم القومي / الكارنيه', 'الكلية', 'الفرقة الدراسية', 'رقم الهاتف / الواتساب', 'البطولة / اللعبة', 'تصنيف اللعبة', 'تاريخ ووقت التسجيل']
+            ws.append(headers)
+            h_font = Font(name='Arial', size=11, bold=True, color='FFFFFF')
+            h_fill = PatternFill(start_color='0C2548', end_color='0C2548', fill_type='solid')
+            for col_idx in range(1, len(headers) + 1):
+                c = ws.cell(row=1, column=col_idx)
+                c.font = h_font
+                c.fill = h_fill
+                c.alignment = Alignment(horizontal='center', vertical='center')
+            wb.save(ACTIVITIES_EXCEL_PATH)
+            wb.close()
+        except Exception:
+            pass
+
+    return send_file(
+        ACTIVITIES_EXCEL_PATH,
+        as_attachment=True,
+        download_name='سجل_المسجلين_في_الأنشطة_الطلابية_2026.xlsx',
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 @app.route('/api/activity/register', methods=['POST'])
 def activity_register():
