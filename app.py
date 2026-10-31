@@ -1173,14 +1173,17 @@ def admin_upload_excel():
 REGISTRATIONS_FILE = os.path.join(BASE_DIR, 'data', 'activity_registrations.json')
 ACTIVITIES_EXCEL_PATH = os.path.join(BASE_DIR, 'data', 'activity_registrations.xlsx')
 
+_GLOBAL_REGISTRATIONS = []
+
 def load_activity_registrations() -> list:
-    if os.path.exists(REGISTRATIONS_FILE):
+    global _GLOBAL_REGISTRATIONS
+    if not _GLOBAL_REGISTRATIONS and os.path.exists(REGISTRATIONS_FILE):
         try:
             with open(REGISTRATIONS_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                _GLOBAL_REGISTRATIONS = json.load(f)
         except Exception:
-            return []
-    return []
+            _GLOBAL_REGISTRATIONS = []
+    return list(_GLOBAL_REGISTRATIONS)
 
 def append_registration_to_excel(record: dict):
     if not record:
@@ -1253,48 +1256,96 @@ def append_registration_to_excel(record: dict):
         print(f"Error appending to activities excel: {e}")
 
 def save_activity_registration(record: dict):
-    records = load_activity_registrations()
-    records.append(record)
+    global _GLOBAL_REGISTRATIONS
+    _GLOBAL_REGISTRATIONS.append(record)
     try:
         with open(REGISTRATIONS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(records, f, ensure_ascii=False, indent=2)
+            json.dump(_GLOBAL_REGISTRATIONS, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"Error saving registration json: {e}")
 
-    append_registration_to_excel(record)
+    try:
+        append_registration_to_excel(record)
+    except Exception as e:
+        print(f"Error appending to excel: {e}")
 
 @app.route('/admin/download_registrations_excel')
 def admin_download_registrations_excel():
     if not session.get('is_admin'):
         return redirect(url_for('admin_dashboard'))
 
-    if not os.path.exists(ACTIVITIES_EXCEL_PATH):
-        try:
-            from openpyxl.styles import Font, PatternFill, Alignment
-            wb = openpyxl.Workbook()
-            ws = wb.active
-            ws.title = "مسجلي الأنشطة والبطولات"
-            ws.views.sheetView[0].rightToLeft = True
-            headers = ['كود التسجيل', 'اسم الطالب', 'الرقم القومي / الكارنيه', 'الكلية', 'الفرقة الدراسية', 'رقم الهاتف / الواتساب', 'البطولة / اللعبة', 'تصنيف اللعبة', 'تاريخ ووقت التسجيل']
-            ws.append(headers)
-            h_font = Font(name='Arial', size=11, bold=True, color='FFFFFF')
-            h_fill = PatternFill(start_color='0C2548', end_color='0C2548', fill_type='solid')
-            for col_idx in range(1, len(headers) + 1):
-                c = ws.cell(row=1, column=col_idx)
-                c.font = h_font
-                c.fill = h_fill
-                c.alignment = Alignment(horizontal='center', vertical='center')
-            wb.save(ACTIVITIES_EXCEL_PATH)
-            wb.close()
-        except Exception:
-            pass
+    records = load_activity_registrations()
+    try:
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from openpyxl.utils import get_column_letter
 
-    return send_file(
-        ACTIVITIES_EXCEL_PATH,
-        as_attachment=True,
-        download_name='سجل_المسجلين_في_الأنشطة_الطلابية_2026.xlsx',
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "مسجلي الأنشطة والبطولات"
+        ws.views.sheetView[0].rightToLeft = True
+
+        headers = [
+            'كود التسجيل',
+            'اسم الطالب',
+            'الرقم القومي / الكارنيه',
+            'الكلية',
+            'الفرقة الدراسية',
+            'رقم الهاتف / الواتساب',
+            'البطولة / اللعبة',
+            'تصنيف اللعبة',
+            'تاريخ ووقت التسجيل'
+        ]
+        ws.append(headers)
+
+        h_font = Font(name='Arial', size=11, bold=True, color='FFFFFF')
+        h_fill = PatternFill(start_color='0C2548', end_color='0C2548', fill_type='solid')
+        for col_idx in range(1, len(headers) + 1):
+            c = ws.cell(row=1, column=col_idx)
+            c.font = h_font
+            c.fill = h_fill
+            c.alignment = Alignment(horizontal='center', vertical='center')
+
+        for r_idx, r in enumerate(records, start=2):
+            cat_display = 'ألعاب فردية' if r.get('category') == 'individual' else 'ألعاب زوجية وجماعية'
+            row_data = [
+                r.get('reg_code', ''),
+                r.get('name', ''),
+                r.get('student_id', ''),
+                r.get('faculty', ''),
+                r.get('year', ''),
+                r.get('phone', ''),
+                r.get('sport_name', ''),
+                cat_display,
+                r.get('timestamp', '')
+            ]
+            ws.append(row_data)
+            r_fill = PatternFill(start_color='F8FAFC', end_color='F8FAFC', fill_type='solid') if r_idx % 2 == 0 else PatternFill(fill_type=None)
+            for col_idx in range(1, len(row_data) + 1):
+                c = ws.cell(row=r_idx, column=col_idx)
+                c.font = Font(name='Arial', size=10)
+                c.alignment = Alignment(horizontal='center', vertical='center')
+                if r_idx % 2 == 0:
+                    c.fill = r_fill
+
+        for col in ws.columns:
+            max_len = max(len(str(c.value or '')) for c in col)
+            col_letter = get_column_letter(col[0].column)
+            ws.column_dimensions[col_letter].width = max(max_len + 5, 14)
+
+        buf = BytesIO()
+        wb.save(buf)
+        wb.close()
+        buf.seek(0)
+
+        return send_file(
+            buf,
+            as_attachment=True,
+            download_name='سجل_المسجلين_في_الأنشطة_الطلابية_2026.xlsx',
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    except Exception as e:
+        print(f"Error generating download excel: {e}")
+        return redirect(url_for('admin_dashboard'))
 
 @app.route('/api/activity/register', methods=['POST'])
 def activity_register():
@@ -1308,8 +1359,8 @@ def activity_register():
     sport_name = data.get('sport_name', '').strip()
     category = data.get('category', '').strip()
 
-    if not name or not faculty or not phone:
-        return jsonify({'status': 'error', 'message': 'يرجى ملء جميع الحقول المطلوبة (الاسم، الكلية، ورقم الهاتف)'}), 400
+    if not name or not faculty:
+        return jsonify({'status': 'error', 'message': 'يرجى كتابة الاسم وتحديد الكلية'}), 400
 
     import random
     from datetime import datetime

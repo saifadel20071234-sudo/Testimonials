@@ -487,6 +487,7 @@
             inset: 0;
             opacity: 0;
             transition: opacity 0.35s ease;
+            pointer-events: none;
         }
 
         .portal-card:hover::before { opacity: 1; }
@@ -651,6 +652,8 @@
             justify-content: space-between;
             position: relative;
             overflow: hidden;
+            cursor: pointer;
+            user-select: none;
         }
 
         .act-game-card::before {
@@ -660,6 +663,7 @@
             background: linear-gradient(135deg, rgba(16,185,129,0.04) 0%, rgba(3,105,161,0.05) 100%);
             opacity: 0;
             transition: opacity 0.3s ease;
+            pointer-events: none;
         }
         .act-game-card:hover::before { opacity: 1; }
 
@@ -848,6 +852,7 @@
             background: linear-gradient(135deg, rgba(184,134,11,0.04) 0%, rgba(218,165,32,0.08) 100%);
             opacity: 0;
             transition: opacity 0.3s ease;
+            pointer-events: none;
         }
 
         .conf-card:hover::before { opacity: 1; }
@@ -1705,6 +1710,11 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom:14px;">
+                    <label class="form-label" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#0c2548;">الرقم القومي أو رقم الكارنيه:</label>
+                    <input type="text" id="reg-id" class="form-input" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;" placeholder="أدخل الرقم القومي أو رقم الكارنيه الجامعي..." required dir="ltr">
+                </div>
+
+                <div class="form-group" style="margin-bottom:14px;">
                     <label class="form-label" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#0c2548;">الكلية:</label>
                     <select id="reg-faculty" class="form-select" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;" required>
                         <option value="" disabled selected>اختر كليتك...</option>
@@ -1724,10 +1734,10 @@
                     </select>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
                     <div class="form-group">
                         <label class="form-label" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#0c2548;">الفرقة الدراسية:</label>
-                        <select id="reg-year" class="form-select" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;" required>
+                        <select id="reg-year" class="form-select" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;">
                             <option value="الفرقة الأولى">الفرقة الأولى</option>
                             <option value="الفرقة الثانية">الفرقة الثانية</option>
                             <option value="الفرقة الثالثة">الفرقة الثالثة</option>
@@ -1738,14 +1748,9 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#0c2548;">رقم الهاتف / الواتساب:</label>
-                        <input type="tel" id="reg-phone" class="form-input" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;" placeholder="01xxxxxxxxx" required dir="ltr">
+                        <label class="form-label" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#0c2548;">رقم الهاتف / الواتساب (اختياري):</label>
+                        <input type="tel" id="reg-phone" class="form-input" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;" placeholder="01xxxxxxxxx" dir="ltr">
                     </div>
-                </div>
-
-                <div class="form-group" style="margin-bottom:20px;">
-                    <label class="form-label" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#0c2548;">الرقم القومي أو رقم الكارنيه (اختياري للتوثيق):</label>
-                    <input type="text" id="reg-id" class="form-input" style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; font-family:'Cairo'; font-size:14px; outline:none;" placeholder="أدخل الرقم القومي أو رقم الكارنيه..." dir="ltr">
                 </div>
 
                 <button type="submit" class="btn btn-primary" id="reg-submit-btn" style="width:100%; background:linear-gradient(135deg, #059669 0%, #10b981 100%);">
@@ -2188,7 +2193,7 @@
             const catBadge = category === 'individual' ? 'فردي' : 'زوجي وجماعي';
 
             return `
-                <div class="act-game-card">
+                <div class="act-game-card" onclick="handleSportAction('${sp.id}', '${sp.name}', '${sp.emoji}', '${category}')" role="button" tabindex="0">
                     <div>
                         <span class="game-emoji">${sp.emoji}</span>
                         <div class="game-title">${sp.name}</div>
@@ -2197,7 +2202,7 @@
                             <div style="margin-top:6px; font-size:12px; color:#64748b;">${sp.desc}</div>
                         </div>
                     </div>
-                    <button class="game-btn ${btnClass}" onclick="handleSportAction('${sp.id}', '${sp.name}', '${sp.emoji}', '${category}')">
+                    <button type="button" class="game-btn ${btnClass}" onclick="event.stopPropagation(); handleSportAction('${sp.id}', '${sp.name}', '${sp.emoji}', '${category}')">
                         ${btnText}
                     </button>
                 </div>
@@ -2274,8 +2279,8 @@
         const studentId = document.getElementById('reg-id').value.trim();
         const errBox = document.getElementById('reg-modal-error');
 
-        if (!name || !faculty || !phone) {
-            errBox.textContent = 'يرجى ملء جميع الحقول المطلوبة (الاسم، الكلية، ورقم الهاتف)';
+        if (!name || !faculty) {
+            errBox.textContent = 'يرجى ملء الحقول المطلوبة (اسم الطالب والكلية)';
             errBox.style.display = 'block';
             return;
         }
@@ -2405,16 +2410,12 @@
             return; 
         }
 
-        // الكلية إجباري لضمان دقة وتوثيق الشهادة
-        if (!faculty) { 
-            showAlert('error-msg', '⚠️ يرجى اختيار أو كتابة اسم كليتك أولاً لضمان دقة الشهادة'); 
-            document.getElementById('faculty-input').focus();
-            return; 
-        }
+        // الكلية: إذا لم يتم تحديدها، نستخدم الاسم الرسمي للجامعة افتراضياً
+        const effectiveFaculty = faculty || 'جامعة كفر الشيخ الأهلية';
 
         if (!currentConference) { goHome(); return; }
 
-        confirmedFaculty = faculty;
+        confirmedFaculty = effectiveFaculty;
         confirmedEmail   = email;
 
         hideAlert('error-msg');
