@@ -363,20 +363,7 @@ _STUDENTS_CACHE = {}
 _STUDENTS_ROLES = {}
 
 DEFAULT_SPORTS_STUDENTS = [
-    ('أحمد محمد إبراهيم', 'مشارك'),
-    ('محمد أحمد علي', 'مشارك'),
-    ('أحمد محمد', 'مشارك'),
-    ('محمد أحمد', 'مشارك'),
-    ('سيف الإسلام عادل', 'منظم'),
-    ('زياد أسعد', 'منظم'),
-    ('محمود حسن علي', 'مشارك'),
-    ('عمر خالد يوسف', 'مشارك'),
-    ('كريم عبد الله مصطفى', 'مشارك'),
-    ('نور الدين طارق', 'منظم'),
-    ('يوسف إبراهيم خليل', 'مشارك'),
-    ('حسام الدين محمود', 'مشارك'),
-    ('عبد الرحمن طارق', 'مشارك'),
-    ('علي حسن كمال', 'مشارك'),
+    ('سيف الإسلام محمد', 'مشارك'),
 ]
 
 def get_student_role(conference_id: str, student_name: str) -> str:
@@ -1047,6 +1034,9 @@ def admin_dashboard():
 
     activity_registrations = load_activity_registrations()
     total_registrations = len(activity_registrations)
+    count_accepted = sum(1 for r in activity_registrations if r.get('status') == 'accepted')
+    count_rejected = sum(1 for r in activity_registrations if r.get('status') == 'rejected')
+    count_pending = sum(1 for r in activity_registrations if r.get('status') not in ['accepted', 'rejected'])
 
     return render_template(
         'admin.html',
@@ -1063,7 +1053,10 @@ def admin_dashboard():
         students_ai=students_ai_list,
         students_acc=students_acc_list,
         activity_registrations=activity_registrations,
-        total_registrations=total_registrations
+        total_registrations=total_registrations,
+        count_accepted=count_accepted,
+        count_rejected=count_rejected,
+        count_pending=count_pending
     )
 
 
@@ -1293,7 +1286,8 @@ def admin_download_registrations_excel():
             'رقم الهاتف / الواتساب',
             'البطولة / اللعبة',
             'تصنيف اللعبة',
-            'تاريخ ووقت التسجيل'
+            'تاريخ ووقت التسجيل',
+            'حالة الطلب'
         ]
         ws.append(headers)
 
@@ -1307,6 +1301,20 @@ def admin_download_registrations_excel():
 
         for r_idx, r in enumerate(records, start=2):
             cat_display = 'ألعاب فردية' if r.get('category') == 'individual' else 'ألعاب زوجية وجماعية'
+            raw_status = r.get('status', 'pending')
+            if raw_status == 'accepted':
+                status_display = 'مقبول'
+                st_font = Font(name='Arial', size=10, bold=True, color='15803D')
+                st_fill = PatternFill(start_color='F0FDF4', end_color='F0FDF4', fill_type='solid')
+            elif raw_status == 'rejected':
+                status_display = 'مرفوض'
+                st_font = Font(name='Arial', size=10, bold=True, color='B91C1C')
+                st_fill = PatternFill(start_color='FEF2F2', end_color='FEF2F2', fill_type='solid')
+            else:
+                status_display = 'قيد المراجعة'
+                st_font = Font(name='Arial', size=10, bold=True, color='854D0E')
+                st_fill = PatternFill(start_color='FEF9C3', end_color='FEF9C3', fill_type='solid')
+
             row_data = [
                 r.get('reg_code', ''),
                 r.get('name', ''),
@@ -1316,16 +1324,23 @@ def admin_download_registrations_excel():
                 r.get('phone', ''),
                 r.get('sport_name', ''),
                 cat_display,
-                r.get('timestamp', '')
+                r.get('timestamp', ''),
+                status_display
             ]
             ws.append(row_data)
             r_fill = PatternFill(start_color='F8FAFC', end_color='F8FAFC', fill_type='solid') if r_idx % 2 == 0 else PatternFill(fill_type=None)
-            for col_idx in range(1, len(row_data) + 1):
+            for col_idx in range(1, len(row_data)):
                 c = ws.cell(row=r_idx, column=col_idx)
                 c.font = Font(name='Arial', size=10)
                 c.alignment = Alignment(horizontal='center', vertical='center')
                 if r_idx % 2 == 0:
                     c.fill = r_fill
+
+            # تنسيق خاص لخلية الحالة
+            st_cell = ws.cell(row=r_idx, column=len(row_data))
+            st_cell.font = st_font
+            st_cell.fill = st_fill
+            st_cell.alignment = Alignment(horizontal='center', vertical='center')
 
         for col in ws.columns:
             max_len = max(len(str(c.value or '')) for c in col)
@@ -1376,7 +1391,7 @@ def activity_register():
         'sport_name': sport_name,
         'category': category,
         'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'status': 'confirmed'
+        'status': 'pending'
     }
     save_activity_registration(record)
 
@@ -1386,6 +1401,44 @@ def activity_register():
         'sport_name': sport_name,
         'student_name': name,
         'message': f'تم تأكيد تسجيل اشتراكك بنجاح في {sport_name}!'
+    })
+
+@app.route('/api/admin/registration/status', methods=['POST'])
+def update_registration_status():
+    if not session.get('is_admin'):
+        return jsonify({'status': 'error', 'message': 'غير مصرح للوصول'}), 403
+
+    data = request.get_json(silent=True) or {}
+    reg_code = data.get('reg_code', '').strip()
+    new_status = data.get('status', '').strip()
+
+    if not reg_code or new_status not in ['accepted', 'rejected', 'pending']:
+        return jsonify({'status': 'error', 'message': 'بيانات غير صالحة'}), 400
+
+    records = load_activity_registrations()
+    updated = False
+    for r in records:
+        if r.get('reg_code') == reg_code:
+            r['status'] = new_status
+            updated = True
+            break
+
+    if not updated:
+        return jsonify({'status': 'error', 'message': 'لم يتم العثور على كود التسجيل المطلوب'}), 404
+
+    global _GLOBAL_REGISTRATIONS
+    _GLOBAL_REGISTRATIONS = records
+    try:
+        with open(REGISTRATIONS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(_GLOBAL_REGISTRATIONS, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving updated status: {e}")
+
+    return jsonify({
+        'status': 'ok',
+        'reg_code': reg_code,
+        'new_status': new_status,
+        'message': 'تم تحديث حالة طلب الطالب بنجاح'
     })
 
 
